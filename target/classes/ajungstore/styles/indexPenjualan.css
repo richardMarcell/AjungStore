@@ -1,0 +1,37 @@
+.header {
+  -fx-border-style: solid;
+  -fx-border-width: 0 0 0.5 0;
+  -fx-border-color: grey;
+  -fx-padding: 0px 16px 0px 16px;
+}
+
+.sidebar {
+  -fx-border-style: solid;
+  -fx-border-width: 0 0.5 0 0;
+  -fx-border-color: grey;
+  -fx-padding: 20px;
+}
+
+.appName {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+  -fx-font-style: italic;
+}
+
+.welcome {
+  -fx-font-size: 16px;
+}
+
+.navBarang {
+  -fx-font-size: 20px;
+  -fx-padding: 10px 0px 0px 0px;
+}
+
+.navPelanggan {
+  -fx-font-size: 20px;
+  -fx-padding: 10px 0px 0px 0px;
+}
+
+.navPenjualan {
+  -fx-font-size: 20px;
+}

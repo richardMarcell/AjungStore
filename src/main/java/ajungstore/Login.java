@@ -12,6 +12,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class Login extends Application {
+    private static final String USERNAME = "admin";
+    private static final String PASSWORD = "password";
 
     public void start(Stage primaryStage) throws Exception {
         BorderPane borderPane = new BorderPane();
@@ -19,7 +21,7 @@ public class Login extends Application {
         borderPane.getStylesheets().add(css);
 
         VBox vbox = new VBox();
-        vbox.setAlignment(Pos.CENTER_LEFT); // Mengatur alignment ke tengah
+        vbox.setAlignment(Pos.CENTER_LEFT);
         vbox.setSpacing(10);
         vbox.setMaxWidth(400);
 
@@ -50,7 +52,22 @@ public class Login extends Application {
         loginButton.setMinWidth(400);
         loginButton.prefHeight(40);
         loginButton.setOnAction(e -> {
-            // Logic for login
+            String username = usernameField.getText();
+            String password = passwordField.getText();
+            if (username.equals(USERNAME) && password.equals(PASSWORD)) {
+                // Login berhasil
+                System.out.println("Login berhasil!");
+                // Pindah ke halaman penjualan
+                Penjualan penjualan = new Penjualan();
+                try {
+                    penjualan.index(primaryStage);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            } else {
+                // Login gagal
+                System.out.println("Login gagal! Username atau password salah.");
+            }
         });
 
         vbox.getChildren().addAll(header, usernameLabel, usernameField, passwordLabel, passwordField, loginButton);
