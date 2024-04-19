@@ -35,3 +35,56 @@
 .navPenjualan {
   -fx-font-size: 20px;
 }
+
+.contentBox {
+  -fx-padding: 10px 10px 10px 10px;
+}
+
+.statPenjualan {
+  -fx-border-style: solid;
+  -fx-border-width: 1 1 1 1;
+  -fx-border-color: black;
+  -fx-padding: 20px;
+  -fx-border-radius: 10px;
+}
+
+.statHutang {
+  -fx-border-style: solid;
+  -fx-border-width: 1 1 1 1;
+  -fx-border-color: black;
+  -fx-padding: 20px;
+  -fx-border-radius: 10px;
+}
+
+.statPiutang {
+  -fx-border-style: solid;
+  -fx-border-width: 1 1 1 1;
+  -fx-border-color: black;
+  -fx-padding: 20px;
+  -fx-border-radius: 10px;
+}
+
+.statPenjualanHeader {
+  -fx-font-weight: bold;
+  -fx-font-size: 20px;
+}
+.statHutangHeader {
+  -fx-font-weight: bold;
+  -fx-font-size: 20px;
+}
+
+.statPiutangHeader {
+  -fx-font-weight: bold;
+  -fx-font-size: 20px;
+}
+
+.statPenjualanContent {
+  -fx-font-size: 14px;
+}
+.statHutangContent {
+  -fx-font-size: 14px;
+}
+
+.statPiutangContent {
+  -fx-font-size: 14px;
+}
