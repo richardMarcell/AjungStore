@@ -23,17 +23,17 @@
 }
 
 .navBarang {
-  -fx-font-size: 20px;
+  -fx-font-size: 16px;
   -fx-padding: 10px 0px 0px 0px;
 }
 
 .navPelanggan {
-  -fx-font-size: 20px;
+  -fx-font-size: 16px;
   -fx-padding: 10px 0px 0px 0px;
 }
 
 .navPenjualan {
-  -fx-font-size: 20px;
+  -fx-font-size: 16px;
 }
 
 .contentBox {
@@ -87,4 +87,20 @@
 
 .statPiutangContent {
   -fx-font-size: 14px;
+}
+
+.contentHeaderTitle {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+}
+
+.contentHeaderDescription {
+  -fx-font-size: 14px;
+}
+
+.buttonCreate {
+  -fx-background-color: #f6ca48;
+  -fx-border-radius: 10px;
+  -fx-padding: 10px;
+  -fx-font-weight: bold;
 }

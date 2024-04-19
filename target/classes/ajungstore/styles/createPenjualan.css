@@ -23,15 +23,55 @@
 }
 
 .navBarang {
-  -fx-font-size: 20px;
+  -fx-font-size: 16px;
   -fx-padding: 10px 0px 0px 0px;
 }
 
 .navPelanggan {
-  -fx-font-size: 20px;
+  -fx-font-size: 16px;
   -fx-padding: 10px 0px 0px 0px;
 }
 
 .navPenjualan {
+  -fx-font-size: 16px;
+}
+
+.contentBox {
+  -fx-padding: 10px 10px 10px 10px;
+}
+
+.contentHeaderTitle {
   -fx-font-size: 20px;
+  -fx-font-weight: bold;
+}
+
+.contentHeaderDescription {
+  -fx-font-size: 14px;
+}
+
+.nomorFakturLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.nomorFakturInput {
+  -fx-padding: 10px 4px;
+}
+
+.namaPelangganLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.namaPelangganInput {
+  -fx-padding: 10px 4px;
+}
+
+.tanggalLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.tanggalInput {
+  -fx-padding: 10px 4px;
 }
