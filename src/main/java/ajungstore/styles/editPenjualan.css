@@ -1,0 +1,161 @@
+.header {
+  -fx-border-style: solid;
+  -fx-border-width: 0 0 0.5 0;
+  -fx-border-color: grey;
+  -fx-padding: 0px 16px 0px 16px;
+}
+
+.sidebar {
+  -fx-border-style: solid;
+  -fx-border-width: 0 0.5 0 0;
+  -fx-border-color: grey;
+  -fx-padding: 20px;
+}
+
+.appName {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+  -fx-font-style: italic;
+}
+
+.welcome {
+  -fx-font-size: 16px;
+}
+
+.navBarang {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+}
+
+.navPelanggan {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+}
+
+.navPenjualan {
+  -fx-font-size: 16px;
+}
+
+.contentBox {
+  -fx-padding: 10px 10px 10px 10px;
+}
+
+.contentHeaderTitle {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+}
+
+.contentHeaderDescription {
+  -fx-font-size: 14px;
+}
+
+.nomorFakturLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.nomorFakturInput {
+  -fx-padding: 10px 4px;
+}
+
+.namaPelangganLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.namaPelangganInput {
+  -fx-padding: 10px 4px;
+}
+
+.tanggalLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.tanggalInput {
+  -fx-padding: 10px 4px;
+}
+
+.secondaryFormTitle {
+  -fx-font-weight: bold;
+  -fx-font-size: 16px;
+}
+
+.namaBarangLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.namaBarangInput {
+  -fx-padding: 10px 4px;
+}
+
+.hargaSatuanLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.hargaSatuanInput {
+  -fx-padding: 15px 4px;
+}
+
+.kuantitasLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.kuantitasInput {
+  -fx-padding: 15px 4px;
+}
+
+.subtotalLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.subtotalInput {
+  -fx-padding: 15px 4px;
+}
+
+.tambahDetailTransaksiButton {
+  -fx-background-color: #00bdd6;
+  -fx-border-radius: 10px;
+  -fx-padding: 5px 10px;
+  -font-weight: bold;
+}
+
+.hapusDetailButton {
+  -fx-padding: 15px;
+}
+
+.totalLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.totalInput {
+  -fx-padding: 15px 4px;
+}
+
+.totalBayarLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.totalBayarInput {
+  -fx-padding: 15px 4px;
+}
+
+.submitButton {
+  -fx-background-color: #000000;
+  -fx-border-radius: 10px;
+  -fx-padding: 8px 15px;
+  -font-weight: bold;
+}
+
+.backButton {
+  -fx-background-color: #bbbbbb;
+  -fx-border-radius: 10px;
+  -fx-padding: 8px 15px;
+  -font-weight: bold;
+}
