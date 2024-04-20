@@ -278,15 +278,83 @@ public class Penjualan {
         primaryForm.getChildren().addAll(nomorFakturField, namaPelangganField, tanggalField);
 
         VBox secondaryForm = new VBox();
+        secondaryForm.setSpacing(20);
         secondaryForm.getStyleClass().add("secondaryForm");
+
+        VBox secondaryFormHeader = new VBox();
+        secondaryFormHeader.setAlignment(Pos.CENTER);
+        Label secondaryFormTitle = new Label("Detail Transaksi");
+        secondaryFormTitle.getStyleClass().add("secondaryFormTitle");
+        secondaryFormHeader.getChildren().setAll(secondaryFormTitle);
+
+        GridPane secondaryFormGrid = new GridPane();
+        secondaryFormGrid.setHgap(10);
+        secondaryFormGrid.setVgap(10);
+
+        // Set up the initial rows for the secondary form
+        addSecondaryFormField(secondaryFormGrid, 0);
+
+        Button tambahDetailTransaksiButton = new Button("Tambah Barang");
+        tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
+        tambahDetailTransaksiButton.setTextFill(Color.WHITE);
+        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
+
+        HBox totalField = new HBox();
+        totalField.setSpacing(100);
+        totalField.setAlignment(Pos.CENTER_LEFT);
+        Label totalLabel = new Label("Total");
+        totalLabel.getStyleClass().add("totalLabel");
+        TextField totalInput = new TextField();
+        totalInput.getStyleClass().add("totalInput");
+        // HBox.setHgrow(totalInput, Priority.ALWAYS);
+        totalField.getChildren().addAll(totalLabel, totalInput);
+
+        HBox totalBayarField = new HBox();
+        totalBayarField.setSpacing(60);
+        totalBayarField.setAlignment(Pos.CENTER_LEFT);
+        Label totalBayarLabel = new Label("Total Bayar");
+        totalBayarLabel.getStyleClass().add("totalBayarLabel");
+        TextField totalBayarInput = new TextField();
+        totalBayarInput.getStyleClass().add("totalBayarInput");
+        // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
+        totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
+
+        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton, totalField, totalBayarField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
-        contentBox.getChildren().addAll(contentHeaderBox, formBox);
+        HBox contentFooterBox = new HBox();
+        contentFooterBox.setSpacing(20);
+
+        Button backButton = new Button("Kembali");
+        backButton.getStyleClass().add("backButton");
+        backButton.setOnAction(e -> {
+            try {
+                index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Button submitButton = new Button("Simpan");
+        submitButton.getStyleClass().add("submitButton");
+        submitButton.setTextFill(Color.WHITE);
+        submitButton.setOnAction(e -> {
+            System.out.println("Berhasil menyimpan data barang");
+            try {
+                index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
+        contentFooterBox.getChildren().addAll(backButton, submitButton);
+
+        contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
-
 
         Scene scene = new Scene(borderPane, 800, 600);
         createStage.setScene(scene);
@@ -294,6 +362,7 @@ public class Penjualan {
         createStage.setTitle("AjungStore - Create Penjualan");
         createStage.show();
     }
+
 
     public void edit(Stage ediStage) throws Exception {
         BorderPane borderPane = new BorderPane();
@@ -363,5 +432,63 @@ public class Penjualan {
         ediStage.setTitle("AjungStore - Edit Penjualan");
         ediStage.show();
     }
+
+    private void addSecondaryFormField(GridPane grid, int rowIndex) {
+        VBox namaBarangField = new VBox();
+        namaBarangField.setSpacing(10);
+        Label namaBarangLabel = new Label("Nama Barang");
+        namaBarangLabel.getStyleClass().add("namaBarangLabel");
+        ComboBox<String> namaBarangInput = new ComboBox<>();
+        namaBarangInput.setMinWidth(600);
+        namaBarangInput.setMinHeight(20);
+        namaBarangInput.getItems().addAll("Pepsodent", "Rinso", "Blueband");
+        namaBarangInput.getStyleClass().add("namaBarangInput");
+        namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
+
+        VBox hargaSatuanField = new VBox();
+        hargaSatuanField.setSpacing(10);
+        Label hargaSatuanLabel = new Label("Harga Satuan");
+        hargaSatuanLabel.getStyleClass().add("hargaSatuanLabel");
+        TextField hargaSatuanInput = new TextField();
+        hargaSatuanInput.setMinWidth(200);
+        hargaSatuanInput.setMinHeight(20);
+        hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
+        hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
+
+        VBox kuantitasField = new VBox();
+        kuantitasField.setSpacing(10);
+        Label kuantitasLabel = new Label("Kuantitas");
+        kuantitasLabel.getStyleClass().add("kuantitasLabel");
+        TextField kuantitasInput = new TextField();
+        kuantitasInput.setMinWidth(100);
+        kuantitasInput.setMinHeight(20);
+        kuantitasInput.getStyleClass().add("kuantitasInput");
+        kuantitasField.getChildren().addAll(kuantitasLabel, kuantitasInput);
+
+        VBox subtotalField = new VBox();
+        subtotalField.setSpacing(10);
+        Label subtotalLabel = new Label("Subtotal");
+        subtotalLabel.getStyleClass().add("subtotalLabel");
+        TextField subtotalInput = new TextField();
+        subtotalInput.setMinWidth(150);
+        subtotalInput.setMinHeight(20);
+        subtotalInput.getStyleClass().add("subtotalInput");
+        subtotalField.getChildren().addAll(subtotalLabel, subtotalInput);
+
+        VBox hapusDetailButtonField = new VBox();
+        hapusDetailButtonField.setSpacing(10);
+        Label hapusDetailButtonEmptyLabel = new Label(" ");
+        Button hapusDetailButton = new Button("-");
+        hapusDetailButton.getStyleClass().add("hapusDetailButton");
+        hapusDetailButton.setAlignment(Pos.CENTER);
+        hapusDetailButtonField.getChildren().addAll(hapusDetailButtonEmptyLabel, hapusDetailButton);
+        hapusDetailButton.setOnAction(e -> {
+            // Remove the row from the grid
+            grid.getChildren().removeAll(namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
+        });
+
+        grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
+    }
+
 }
 
