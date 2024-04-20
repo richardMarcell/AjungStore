@@ -3,11 +3,9 @@ package ajungstore;
 import java.util.Arrays;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -25,7 +23,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Pelanggan {
@@ -102,63 +99,17 @@ public class Pelanggan {
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
 
-        Label contentHeaderTitle = new Label("Dashboard Penjualan");
+        Label contentHeaderTitle = new Label("Dashboard Pelanggan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-        Label contentHeaderDescription = new Label("Pengelolaan daftar penjualan Toko Ajung");
+        Label contentHeaderDescription = new Label("Pengelolaan daftar pelanggan Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
 
-        HBox quickStats = new HBox();
-        quickStats.getStyleClass().add("quickStats");
-        quickStats.setSpacing(10);
-
-        VBox statPenjualan = new VBox();
-        statPenjualan.setAlignment(Pos.CENTER);
-        statPenjualan.getStyleClass().add("statPenjualan");
-        HBox.setHgrow(statPenjualan, Priority.ALWAYS); // <-- Mengatur lebar VBox
-
-        Label statPenjualanHeader = new Label("Penjualan");
-        statPenjualanHeader.getStyleClass().add("statPenjualanHeader");
-
-        Label statPenjualanContent = new Label("10");
-        statPenjualanContent.getStyleClass().add("statPenjualanContent");
-
-        statPenjualan.getChildren().addAll(statPenjualanHeader, statPenjualanContent);
-
-        VBox statHutang = new VBox();
-        statHutang.setAlignment(Pos.CENTER);
-        statHutang.getStyleClass().add("statHutang");
-        HBox.setHgrow(statHutang, Priority.ALWAYS); // <-- Mengatur lebar VBox
-
-        Label statHutangHeader = new Label("Hutang");
-        statHutangHeader.getStyleClass().add("statHutangHeader");
-
-        Label statHutangContent = new Label("10");
-        statHutangContent.getStyleClass().add("statHutangContent");
-
-        statHutang.getChildren().addAll(statHutangHeader, statHutangContent);
-
-        VBox statPiutang = new VBox();
-        statPiutang.setAlignment(Pos.CENTER);
-        statPiutang.getStyleClass().add("statPiutang");
-        HBox.setHgrow(statPiutang, Priority.ALWAYS); // <-- Mengatur lebar VBox
-
-        Label statPiutangHeader = new Label("Piutang");
-        statPiutangHeader.getStyleClass().add("statPiutangHeader");
-
-        Label statPiutangContent = new Label("10");
-        statPiutangContent.getStyleClass().add("statPiutangContent");
-
-        statPiutang.getChildren().addAll(statPiutangHeader, statPiutangContent);
-
-        quickStats.getChildren().setAll(statPenjualan, statHutang, statPiutang);
-
-
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
-        Button buttonCreate = new Button("+ Penjualan");
+        Button buttonCreate = new Button("+ Pelanggan");
         buttonCreate.getStyleClass().add("buttonCreate");
         buttonCreate.setAlignment(Pos.CENTER);
         buttonCreate.setTextFill(Color.WHITE);
@@ -176,8 +127,8 @@ public class Pelanggan {
 
         // Menambahkan kolom-kolom untuk tabel penjualan (no, nama customer, status, action)
         TableColumn<ObservableList<String>, String> colNo = new TableColumn<>("No");
-        TableColumn<ObservableList<String>, String> colNamaCustomer = new TableColumn<>("Nama Customer");
-        TableColumn<ObservableList<String>, String> colStatus = new TableColumn<>("Status");
+        TableColumn<ObservableList<String>, String> colNamaCustomer = new TableColumn<>("Nama");
+        TableColumn<ObservableList<String>, String> colStatus = new TableColumn<>("Nomor Telepon");
         TableColumn<ObservableList<String>, String> colAction = new TableColumn<>("Action");
 
         // Mengatur lebar kolom dengan persentase dari lebar total tabel
@@ -197,9 +148,9 @@ public class Pelanggan {
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
 
         String[][] pelangganData = {
-            {"1", "John Doe", "LUNAS"},
-            {"2", "Jane Smith", "BELUM LUNAS"},
-            {"3", "Alice Johnson", "LUNAS"},
+            {"1", "John Doe", "08789655679"},
+            {"2", "Jane Smith", "0889987976"},
+            {"3", "Alice Johnson", "085566451778"},
         };
 
         for (String[] row : pelangganData) {
@@ -224,7 +175,7 @@ public class Pelanggan {
 
                 // Handle delete button action
                 deleteButton.setOnAction(event -> {
-                    System.out.println("Anda telah menghapus barang transaksi ini");
+                    System.out.println("Anda telah menghapus pelangganini");
                 });
             }
 
@@ -247,7 +198,7 @@ public class Pelanggan {
 
         tableBox.getChildren().addAll(buttonCreate, table);
 
-        contentBox.getChildren().addAll(contentHeaderBox, quickStats, tableBox);
+        contentBox.getChildren().addAll(contentHeaderBox, tableBox);
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
@@ -333,10 +284,10 @@ public class Pelanggan {
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
 
-        Label contentHeaderTitle = new Label("Tambah Penjualan");
+        Label contentHeaderTitle = new Label("Tambah Pelanggan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-        Label contentHeaderDescription = new Label("Menambah penjualan yang terjadi di Toko Ajung");
+        Label contentHeaderDescription = new Label("Menambah pelanggan di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
@@ -349,89 +300,39 @@ public class Pelanggan {
         primaryForm.setSpacing(30);
         primaryForm.getStyleClass().add("primaryForm");
 
-        HBox nomorFakturField = new HBox();
-        nomorFakturField.setSpacing(60);
-        nomorFakturField.setAlignment(Pos.CENTER_LEFT);
-        Label nomorFakturLabel = new Label("No Faktur");
-        nomorFakturLabel.getStyleClass().add("nomorFakturLabel");
-        TextField nomorFakturInput = new TextField();
-        nomorFakturInput.getStyleClass().add("nomorFakturInput");
-        HBox.setHgrow(nomorFakturInput, Priority.ALWAYS);
-        nomorFakturField.getChildren().addAll(nomorFakturLabel, nomorFakturInput);
+        HBox namaField = new HBox();
+        namaField.setSpacing(60);
+        namaField.setAlignment(Pos.CENTER_LEFT);
+        Label namaLabel = new Label("Nama");
+        namaLabel.getStyleClass().add("namaLabel");
+        TextField namaInput = new TextField();
+        namaInput.getStyleClass().add("namaInput");
+        HBox.setHgrow(namaInput, Priority.ALWAYS);
+        namaField.getChildren().addAll(namaLabel, namaInput);
 
-        HBox namaPelangganField = new HBox();
-        namaPelangganField.setSpacing(15);
-        namaPelangganField.setAlignment(Pos.CENTER_LEFT);
-        Label namaPelangganLabel = new Label("Nama Pelanggan");
-        namaPelangganLabel.getStyleClass().add("namaPelangganLabel");
-        namaPelangganLabel.setMinWidth(Region.USE_PREF_SIZE); // Menentukan lebar minimum agar tidak terpotong
-        ComboBox<String> namaPelangganInput = new ComboBox<>();
-        namaPelangganInput.getItems().addAll("Andi", "Budi", "Budiman Andi");
-        namaPelangganInput.getStyleClass().add("namaPelangganInput");
-        HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
-        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari nomorFakturField
-        namaPelangganField.getChildren().addAll(namaPelangganLabel, namaPelangganInput);
+        HBox nomorTeleponField = new HBox();
+        nomorTeleponField.setSpacing(60);
+        nomorTeleponField.setAlignment(Pos.CENTER_LEFT);
+        Label nomorTeleponLabel = new Label("Telepon");
+        nomorTeleponLabel.getStyleClass().add("nomorTeleponLabel");
+        TextField nomorTeleponInput = new TextField();
+        nomorTeleponInput.getStyleClass().add("nomorTeleponInput");
+        HBox.setHgrow(nomorTeleponInput, Priority.ALWAYS);
+        nomorTeleponField.getChildren().addAll(nomorTeleponLabel, nomorTeleponInput);
 
-        HBox tanggalField = new HBox();
-        tanggalField.setSpacing(75);
-        tanggalField.setAlignment(Pos.CENTER_LEFT);
-        Label tanggalLabel = new Label("Tanggal");
-        tanggalLabel.getStyleClass().add("tanggalLabel");
-        tanggalLabel.setMinWidth(Region.USE_PREF_SIZE);
-        DatePicker tanggalInput = new DatePicker();
-        tanggalInput.getStyleClass().add("tanggalInput");
-        HBox.setHgrow(tanggalInput, Priority.ALWAYS);
-        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari tanggalField
-        tanggalField.getChildren().addAll(tanggalLabel, tanggalInput);
+        HBox alamatField = new HBox();
+        alamatField.setSpacing(60);
+        alamatField.setAlignment(Pos.CENTER_LEFT);
+        Label alamatLabel = new Label("Alamat");
+        alamatLabel.getStyleClass().add("alamatLabel");
+        TextField alamatInput = new TextField();
+        alamatInput.getStyleClass().add("alamatInput");
+        HBox.setHgrow(alamatInput, Priority.ALWAYS);
+        alamatField.getChildren().addAll(alamatLabel, alamatInput);
 
+        primaryForm.getChildren().addAll(namaField, nomorTeleponField, alamatField);
 
-        primaryForm.getChildren().addAll(nomorFakturField, namaPelangganField, tanggalField);
-
-        VBox secondaryForm = new VBox();
-        secondaryForm.setSpacing(20);
-        secondaryForm.getStyleClass().add("secondaryForm");
-
-        VBox secondaryFormHeader = new VBox();
-        secondaryFormHeader.setAlignment(Pos.CENTER);
-        Label secondaryFormTitle = new Label("Detail Transaksi");
-        secondaryFormTitle.getStyleClass().add("secondaryFormTitle");
-        secondaryFormHeader.getChildren().setAll(secondaryFormTitle);
-
-        GridPane secondaryFormGrid = new GridPane();
-        secondaryFormGrid.setHgap(10);
-        secondaryFormGrid.setVgap(10);
-
-        // Set up the initial rows for the secondary form
-        addSecondaryFormField(secondaryFormGrid, 0);
-
-        Button tambahDetailTransaksiButton = new Button("Tambah Barang");
-        tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
-        tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
-
-        HBox totalField = new HBox();
-        totalField.setSpacing(100);
-        totalField.setAlignment(Pos.CENTER_LEFT);
-        Label totalLabel = new Label("Total");
-        totalLabel.getStyleClass().add("totalLabel");
-        TextField totalInput = new TextField();
-        totalInput.getStyleClass().add("totalInput");
-        // HBox.setHgrow(totalInput, Priority.ALWAYS);
-        totalField.getChildren().addAll(totalLabel, totalInput);
-
-        HBox totalBayarField = new HBox();
-        totalBayarField.setSpacing(60);
-        totalBayarField.setAlignment(Pos.CENTER_LEFT);
-        Label totalBayarLabel = new Label("Total Bayar");
-        totalBayarLabel.getStyleClass().add("totalBayarLabel");
-        TextField totalBayarInput = new TextField();
-        totalBayarInput.getStyleClass().add("totalBayarInput");
-        // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
-        totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
-
-        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton, totalField, totalBayarField);
-
-        formBox.getChildren().addAll(primaryForm, secondaryForm);
+        formBox.getChildren().addAll(primaryForm);
 
         HBox contentFooterBox = new HBox();
         contentFooterBox.setSpacing(20);
@@ -450,7 +351,7 @@ public class Pelanggan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            System.out.println("Berhasil menyimpan data barang");
+            System.out.println("Berhasil menyimpan data pelanggan");
             try {
                 index(createStage);
             } catch (Exception ex) {
@@ -547,10 +448,10 @@ public class Pelanggan {
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
 
-        Label contentHeaderTitle = new Label("Edit Penjualan");
+        Label contentHeaderTitle = new Label("Edit Pelanggan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-        Label contentHeaderDescription = new Label("Mengedit penjualan yang terjadi di Toko Ajung");
+        Label contentHeaderDescription = new Label("Mengedit pelanggan di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
@@ -563,89 +464,39 @@ public class Pelanggan {
         primaryForm.setSpacing(30);
         primaryForm.getStyleClass().add("primaryForm");
 
-        HBox nomorFakturField = new HBox();
-        nomorFakturField.setSpacing(60);
-        nomorFakturField.setAlignment(Pos.CENTER_LEFT);
-        Label nomorFakturLabel = new Label("No Faktur");
-        nomorFakturLabel.getStyleClass().add("nomorFakturLabel");
-        TextField nomorFakturInput = new TextField();
-        nomorFakturInput.getStyleClass().add("nomorFakturInput");
-        HBox.setHgrow(nomorFakturInput, Priority.ALWAYS);
-        nomorFakturField.getChildren().addAll(nomorFakturLabel, nomorFakturInput);
+        HBox namaField = new HBox();
+        namaField.setSpacing(60);
+        namaField.setAlignment(Pos.CENTER_LEFT);
+        Label namaLabel = new Label("Nama");
+        namaLabel.getStyleClass().add("namaLabel");
+        TextField namaInput = new TextField();
+        namaInput.getStyleClass().add("namaInput");
+        HBox.setHgrow(namaInput, Priority.ALWAYS);
+        namaField.getChildren().addAll(namaLabel, namaInput);
 
-        HBox namaPelangganField = new HBox();
-        namaPelangganField.setSpacing(15);
-        namaPelangganField.setAlignment(Pos.CENTER_LEFT);
-        Label namaPelangganLabel = new Label("Nama Pelanggan");
-        namaPelangganLabel.getStyleClass().add("namaPelangganLabel");
-        namaPelangganLabel.setMinWidth(Region.USE_PREF_SIZE); // Menentukan lebar minimum agar tidak terpotong
-        ComboBox<String> namaPelangganInput = new ComboBox<>();
-        namaPelangganInput.getItems().addAll("Andi", "Budi", "Budiman Andi");
-        namaPelangganInput.getStyleClass().add("namaPelangganInput");
-        HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
-        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari nomorFakturField
-        namaPelangganField.getChildren().addAll(namaPelangganLabel, namaPelangganInput);
+        HBox nomorTeleponField = new HBox();
+        nomorTeleponField.setSpacing(60);
+        nomorTeleponField.setAlignment(Pos.CENTER_LEFT);
+        Label nomorTeleponLabel = new Label("Telepon");
+        nomorTeleponLabel.getStyleClass().add("nomorTeleponLabel");
+        TextField nomorTeleponInput = new TextField();
+        nomorTeleponInput.getStyleClass().add("nomorTeleponInput");
+        HBox.setHgrow(nomorTeleponInput, Priority.ALWAYS);
+        nomorTeleponField.getChildren().addAll(nomorTeleponLabel, nomorTeleponInput);
 
-        HBox tanggalField = new HBox();
-        tanggalField.setSpacing(75);
-        tanggalField.setAlignment(Pos.CENTER_LEFT);
-        Label tanggalLabel = new Label("Tanggal");
-        tanggalLabel.getStyleClass().add("tanggalLabel");
-        tanggalLabel.setMinWidth(Region.USE_PREF_SIZE);
-        DatePicker tanggalInput = new DatePicker();
-        tanggalInput.getStyleClass().add("tanggalInput");
-        HBox.setHgrow(tanggalInput, Priority.ALWAYS);
-        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari tanggalField
-        tanggalField.getChildren().addAll(tanggalLabel, tanggalInput);
+        HBox alamatField = new HBox();
+        alamatField.setSpacing(60);
+        alamatField.setAlignment(Pos.CENTER_LEFT);
+        Label alamatLabel = new Label("Alamat");
+        alamatLabel.getStyleClass().add("alamatLabel");
+        TextField alamatInput = new TextField();
+        alamatInput.getStyleClass().add("alamatInput");
+        HBox.setHgrow(alamatInput, Priority.ALWAYS);
+        alamatField.getChildren().addAll(alamatLabel, alamatInput);
 
+        primaryForm.getChildren().addAll(namaField, nomorTeleponField, alamatField);
 
-        primaryForm.getChildren().addAll(nomorFakturField, namaPelangganField, tanggalField);
-
-        VBox secondaryForm = new VBox();
-        secondaryForm.setSpacing(20);
-        secondaryForm.getStyleClass().add("secondaryForm");
-
-        VBox secondaryFormHeader = new VBox();
-        secondaryFormHeader.setAlignment(Pos.CENTER);
-        Label secondaryFormTitle = new Label("Detail Transaksi");
-        secondaryFormTitle.getStyleClass().add("secondaryFormTitle");
-        secondaryFormHeader.getChildren().setAll(secondaryFormTitle);
-
-        GridPane secondaryFormGrid = new GridPane();
-        secondaryFormGrid.setHgap(10);
-        secondaryFormGrid.setVgap(10);
-
-        // Set up the initial rows for the secondary form
-        addSecondaryFormField(secondaryFormGrid, 0);
-
-        Button tambahDetailTransaksiButton = new Button("Tambah Barang");
-        tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
-        tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
-
-        HBox totalField = new HBox();
-        totalField.setSpacing(100);
-        totalField.setAlignment(Pos.CENTER_LEFT);
-        Label totalLabel = new Label("Total");
-        totalLabel.getStyleClass().add("totalLabel");
-        TextField totalInput = new TextField();
-        totalInput.getStyleClass().add("totalInput");
-        // HBox.setHgrow(totalInput, Priority.ALWAYS);
-        totalField.getChildren().addAll(totalLabel, totalInput);
-
-        HBox totalBayarField = new HBox();
-        totalBayarField.setSpacing(60);
-        totalBayarField.setAlignment(Pos.CENTER_LEFT);
-        Label totalBayarLabel = new Label("Total Bayar");
-        totalBayarLabel.getStyleClass().add("totalBayarLabel");
-        TextField totalBayarInput = new TextField();
-        totalBayarInput.getStyleClass().add("totalBayarInput");
-        // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
-        totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
-
-        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton, totalField, totalBayarField);
-
-        formBox.getChildren().addAll(primaryForm, secondaryForm);
+        formBox.getChildren().addAll(primaryForm);
 
         HBox contentFooterBox = new HBox();
         contentFooterBox.setSpacing(20);
@@ -664,7 +515,7 @@ public class Pelanggan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            System.out.println("Berhasil menyimpan data barang");
+            System.out.println("Berhasil menyimpan data pelanggan");
             try {
                 index(editStage);
             } catch (Exception ex) {
@@ -683,66 +534,10 @@ public class Pelanggan {
         Scene scene = new Scene(borderPane, 800, 600);
         editStage.setScene(scene);
         editStage.setFullScreen(true);
-        editStage.setTitle("AjungStore - Edit Penjualan");
+        editStage.setTitle("AjungStore - Edit Pelanggan");
         editStage.show();
     }
 
-    private void addSecondaryFormField(GridPane grid, int rowIndex) {
-        VBox namaBarangField = new VBox();
-        namaBarangField.setSpacing(10);
-        Label namaBarangLabel = new Label("Nama Barang");
-        namaBarangLabel.getStyleClass().add("namaBarangLabel");
-        ComboBox<String> namaBarangInput = new ComboBox<>();
-        namaBarangInput.setMinWidth(600);
-        namaBarangInput.setMinHeight(20);
-        namaBarangInput.getItems().addAll("Pepsodent", "Rinso", "Blueband");
-        namaBarangInput.getStyleClass().add("namaBarangInput");
-        namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
-
-        VBox hargaSatuanField = new VBox();
-        hargaSatuanField.setSpacing(10);
-        Label hargaSatuanLabel = new Label("Harga Satuan");
-        hargaSatuanLabel.getStyleClass().add("hargaSatuanLabel");
-        TextField hargaSatuanInput = new TextField();
-        hargaSatuanInput.setMinWidth(200);
-        hargaSatuanInput.setMinHeight(20);
-        hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
-        hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
-
-        VBox kuantitasField = new VBox();
-        kuantitasField.setSpacing(10);
-        Label kuantitasLabel = new Label("Kuantitas");
-        kuantitasLabel.getStyleClass().add("kuantitasLabel");
-        TextField kuantitasInput = new TextField();
-        kuantitasInput.setMinWidth(100);
-        kuantitasInput.setMinHeight(20);
-        kuantitasInput.getStyleClass().add("kuantitasInput");
-        kuantitasField.getChildren().addAll(kuantitasLabel, kuantitasInput);
-
-        VBox subtotalField = new VBox();
-        subtotalField.setSpacing(10);
-        Label subtotalLabel = new Label("Subtotal");
-        subtotalLabel.getStyleClass().add("subtotalLabel");
-        TextField subtotalInput = new TextField();
-        subtotalInput.setMinWidth(150);
-        subtotalInput.setMinHeight(20);
-        subtotalInput.getStyleClass().add("subtotalInput");
-        subtotalField.getChildren().addAll(subtotalLabel, subtotalInput);
-
-        VBox hapusDetailButtonField = new VBox();
-        hapusDetailButtonField.setSpacing(10);
-        Label hapusDetailButtonEmptyLabel = new Label(" ");
-        Button hapusDetailButton = new Button("-");
-        hapusDetailButton.getStyleClass().add("hapusDetailButton");
-        hapusDetailButton.setAlignment(Pos.CENTER);
-        hapusDetailButtonField.getChildren().addAll(hapusDetailButtonEmptyLabel, hapusDetailButton);
-        hapusDetailButton.setOnAction(e -> {
-            // Remove the row from the grid
-            grid.getChildren().removeAll(namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
-        });
-
-        grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
-    }
 
 }
 
