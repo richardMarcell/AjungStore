@@ -53,38 +53,6 @@
   -fx-font-size: 14px;
 }
 
-.nomorFakturLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.nomorFakturInput {
-  -fx-padding: 10px 4px;
-}
-
-.namaPelangganLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.namaPelangganInput {
-  -fx-padding: 10px 4px;
-}
-
-.tanggalLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.tanggalInput {
-  -fx-padding: 10px 4px;
-}
-
-.secondaryFormTitle {
-  -fx-font-weight: bold;
-  -fx-font-size: 16px;
-}
-
 .namaBarangLabel {
   -fx-font-weight: bold;
   -fx-font-size: 14px;
@@ -100,54 +68,7 @@
 }
 
 .hargaSatuanInput {
-  -fx-padding: 15px 4px;
-}
-
-.kuantitasLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.kuantitasInput {
-  -fx-padding: 15px 4px;
-}
-
-.subtotalLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.subtotalInput {
-  -fx-padding: 15px 4px;
-}
-
-.tambahDetailTransaksiButton {
-  -fx-background-color: #00bdd6;
-  -fx-border-radius: 10px;
-  -fx-padding: 5px 10px;
-  -font-weight: bold;
-}
-
-.hapusDetailButton {
-  -fx-padding: 15px;
-}
-
-.totalLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.totalInput {
-  -fx-padding: 15px 4px;
-}
-
-.totalBayarLabel {
-  -fx-font-weight: bold;
-  -fx-font-size: 14px;
-}
-
-.totalBayarInput {
-  -fx-padding: 15px 4px;
+  -fx-padding: 10px 4px;
 }
 
 .submitButton {

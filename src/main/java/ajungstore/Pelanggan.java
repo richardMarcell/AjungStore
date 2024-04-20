@@ -28,10 +28,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-public class Penjualan {
+public class Pelanggan {
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
-        String css = this.getClass().getResource("styles/indexPenjualan.css").toExternalForm();
+        String css = this.getClass().getResource("styles/indexPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
         GridPane header = new GridPane();
@@ -63,12 +63,12 @@ public class Penjualan {
 
         // Buat item navigasi
         Barang barang = new Barang();
-        Pelanggan pelanggan = new Pelanggan();
+        Penjualan penjualan = new Penjualan();
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
             try {
-                index(indexStage);
+                penjualan.index(indexStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -87,7 +87,7 @@ public class Penjualan {
         navPelanggan.getStyleClass().add("navPelanggan");
         navPelanggan.setOnAction(e -> {
             try {
-                pelanggan.index(indexStage);
+                index(indexStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -256,13 +256,13 @@ public class Penjualan {
         Scene scene = new Scene(borderPane, 800, 600);
         indexStage.setScene(scene);
         indexStage.setFullScreen(true);
-        indexStage.setTitle("AjungStore - Index Penjualan");
+        indexStage.setTitle("AjungStore - Index Pelanggan");
         indexStage.show();
     }
 
     public void create(Stage createStage) throws Exception {
         BorderPane borderPane = new BorderPane();
-        String css = this.getClass().getResource("styles/createPenjualan.css").toExternalForm();
+        String css = this.getClass().getResource("styles/createPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
         GridPane header = new GridPane();
@@ -292,37 +292,37 @@ public class Penjualan {
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-           // Buat item navigasi
-           Barang barang = new Barang();
-           Pelanggan pelanggan = new Pelanggan();
-           Button navPenjualan = new Button("Penjualan");
-           navPenjualan.getStyleClass().add("navPenjualan");
-           navPenjualan.setOnAction(e -> {
-               try {
-                   index(createStage);
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           });
+              // Buat item navigasi
+              Barang barang = new Barang();
+              Penjualan penjualan = new Penjualan();
+              Button navPenjualan = new Button("Penjualan");
+              navPenjualan.getStyleClass().add("navPenjualan");
+              navPenjualan.setOnAction(e -> {
+                  try {
+                      penjualan.index(createStage);
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
 
-           Button navBarang = new Button("Barang");
-           navBarang.getStyleClass().add("navBarang");
-           navBarang.setOnAction(e -> {
-               try {
-                   barang.index(createStage);
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           });
-           Button navPelanggan = new Button("Pelanggan");
-           navPelanggan.getStyleClass().add("navPelanggan");
-           navPelanggan.setOnAction(e -> {
-               try {
-                   pelanggan.index(createStage);
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           });
+              Button navBarang = new Button("Barang");
+              navBarang.getStyleClass().add("navBarang");
+              navBarang.setOnAction(e -> {
+                  try {
+                      barang.index(createStage);
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
+              Button navPelanggan = new Button("Pelanggan");
+              navPelanggan.getStyleClass().add("navPelanggan");
+              navPelanggan.setOnAction(e -> {
+                  try {
+                      index(createStage);
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
 
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
 
@@ -469,14 +469,14 @@ public class Penjualan {
         Scene scene = new Scene(borderPane, 800, 600);
         createStage.setScene(scene);
         createStage.setFullScreen(true);
-        createStage.setTitle("AjungStore - Create Penjualan");
+        createStage.setTitle("AjungStore - Create Pelanggan");
         createStage.show();
     }
 
 
     public void edit(Stage editStage) throws Exception {
         BorderPane borderPane = new BorderPane();
-        String css = this.getClass().getResource("styles/editPenjualan.css").toExternalForm();
+        String css = this.getClass().getResource("styles/editPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
         GridPane header = new GridPane();
@@ -506,37 +506,37 @@ public class Penjualan {
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-         // Buat item navigasi
-         Barang barang = new Barang();
-         Pelanggan pelanggan = new Pelanggan();
-         Button navPenjualan = new Button("Penjualan");
-         navPenjualan.getStyleClass().add("navPenjualan");
-         navPenjualan.setOnAction(e -> {
-             try {
-                 index(editStage);
-             } catch (Exception ex) {
-                 ex.printStackTrace();
-             }
-         });
+              // Buat item navigasi
+              Barang barang = new Barang();
+              Penjualan penjualan = new Penjualan();
+              Button navPenjualan = new Button("Penjualan");
+              navPenjualan.getStyleClass().add("navPenjualan");
+              navPenjualan.setOnAction(e -> {
+                  try {
+                      penjualan.index(editStage);
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
 
-         Button navBarang = new Button("Barang");
-         navBarang.getStyleClass().add("navBarang");
-         navBarang.setOnAction(e -> {
-             try {
-                 barang.index(editStage);
-             } catch (Exception ex) {
-                 ex.printStackTrace();
-             }
-         });
-         Button navPelanggan = new Button("Pelanggan");
-         navPelanggan.getStyleClass().add("navPelanggan");
-         navPelanggan.setOnAction(e -> {
-             try {
-                 pelanggan.index(editStage);
-             } catch (Exception ex) {
-                 ex.printStackTrace();
-             }
-         });
+              Button navBarang = new Button("Barang");
+              navBarang.getStyleClass().add("navBarang");
+              navBarang.setOnAction(e -> {
+                  try {
+                      barang.index(editStage);
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
+              Button navPelanggan = new Button("Pelanggan");
+              navPelanggan.getStyleClass().add("navPelanggan");
+              navPelanggan.setOnAction(e -> {
+                  try {
+                      index(editStage);
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
 
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
 
