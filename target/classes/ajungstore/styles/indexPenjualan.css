@@ -108,3 +108,10 @@
   -fx-padding: 10px;
   -fx-font-weight: bold;
 }
+
+.buttonCetakLaporan {
+  -fx-background-color: #2df051;
+  -fx-border-radius: 10px;
+  -fx-padding: 10px;
+  -fx-font-weight: bold;
+}

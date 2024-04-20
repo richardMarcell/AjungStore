@@ -158,11 +158,30 @@ public class Penjualan {
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
+
+        HBox filterBox = new HBox();
+        filterBox.setSpacing(10);
+        DatePicker startDate = new DatePicker();
+        Label untilLabel = new Label("s/d");
+        DatePicker endDate = new DatePicker();
+        filterBox.getChildren().addAll(startDate, untilLabel, endDate);
+
+        HBox buttonBox = new HBox();
+        buttonBox.setSpacing(10);
+
         Button buttonCreate = new Button("+ Penjualan");
         buttonCreate.getStyleClass().add("buttonCreate");
         buttonCreate.setAlignment(Pos.CENTER);
         buttonCreate.setTextFill(Color.WHITE);
         buttonCreate.setMinWidth(150);
+
+        Button buttonCetakLaporan = new Button("Cetak");
+        buttonCetakLaporan.getStyleClass().add("buttonCetakLaporan");
+        buttonCetakLaporan.setAlignment(Pos.CENTER);
+        buttonCetakLaporan.setTextFill(Color.WHITE);
+        buttonCetakLaporan.setMinWidth(150);
+
+        buttonBox.getChildren().setAll(buttonCreate, buttonCetakLaporan);
 
         buttonCreate.setOnAction(e -> {
             try {
@@ -245,7 +264,7 @@ public class Penjualan {
         // Set the table data
         table.setItems(data);
 
-        tableBox.getChildren().addAll(buttonCreate, table);
+        tableBox.getChildren().addAll(filterBox, buttonBox, table);
 
         contentBox.getChildren().addAll(contentHeaderBox, quickStats, tableBox);
 
