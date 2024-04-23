@@ -11,7 +11,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-public class Login extends Application {
+public class User extends Application {
     private static final String USERNAME = "admin";
     private static final String PASSWORD = "password";
 
