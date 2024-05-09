@@ -522,6 +522,5 @@ public class Barang {
         editStage.show();
     }
 
-
 }
 
