@@ -1,0 +1,29 @@
+.title {
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+}
+
+.titleDescription {
+  -fx-font-size: 16px;
+}
+
+.text-field {
+  -fx-font-size: 14px;
+  -fx-padding: 5px;
+  -fx-pref-width: 200px;
+}
+
+.password-field {
+  -fx-font-size: 14px;
+  -fx-padding: 5px;
+  -fx-pref-width: 200px;
+}
+
+.button {
+  -fx-font-size: 14px;
+  -fx-padding: 10px;
+  -fx-background-color: #ea3c4c;
+  -fx-text-fill: white;
+  -fx-border-radius: 5px;
+  -fx-font-weight: bold;
+}
