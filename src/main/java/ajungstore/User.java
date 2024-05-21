@@ -65,7 +65,6 @@ public class User extends Application {
         TextField usernameField = new TextField();
         usernameField.setPrefHeight(50);
 
-
         Label passwordLabel = new Label("Password:");
         PasswordField passwordField = new PasswordField();
         passwordField.setPrefHeight(50);
@@ -73,12 +72,13 @@ public class User extends Application {
         Button loginButton = new Button("Login");
         loginButton.setMinWidth(400);
         loginButton.prefHeight(40);
-       loginButton.setOnAction(e -> {
+        loginButton.setOnAction(e -> {
             String username = usernameField.getText();
             String password = md5(passwordField.getText()); // MD5 hash input password
 
             try (Connection connection = Dbconnect.getConnect();
-                 PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
+                    PreparedStatement statement = connection
+                            .prepareStatement("SELECT * FROM users WHERE username = ? AND password = ?")) {
                 statement.setString(1, username);
                 statement.setString(2, password);
                 ResultSet resultSet = statement.executeQuery();
