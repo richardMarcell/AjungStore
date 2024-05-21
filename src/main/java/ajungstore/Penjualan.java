@@ -1,6 +1,11 @@
 package ajungstore;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Optional;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -9,7 +14,11 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -29,6 +38,47 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Penjualan {
+
+    private void deleteSalesRecord(int salesId) {
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement deleteDetailsStmt = connection
+                        .prepareStatement("DELETE FROM sales_details WHERE salesId = ?");
+                PreparedStatement deleteSalesStmt = connection.prepareStatement("DELETE FROM sales WHERE id = ?")) {
+
+            // Start a transaction
+            connection.setAutoCommit(false);
+
+            // Delete from sales_details first
+            deleteDetailsStmt.setInt(1, salesId);
+            deleteDetailsStmt.executeUpdate();
+
+            // Delete from sales
+            deleteSalesStmt.setInt(1, salesId);
+            deleteSalesStmt.executeUpdate();
+
+            // Commit the transaction
+            connection.commit();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private boolean showDeleteConfirmationDialog() {
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Konfirmasi Penghapusan");
+        alert.setHeaderText(null);
+        alert.setContentText("Apakah Anda yakin ingin menghapus data penjualan ini?");
+
+        ButtonType buttonTypeYes = new ButtonType("Yes");
+        ButtonType buttonTypeNo = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(buttonTypeYes, buttonTypeNo);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == buttonTypeYes;
+    }
+
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/indexPenjualan.css").toExternalForm();
@@ -45,15 +95,14 @@ public class Penjualan {
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
 
-        // Set the first column to expand to take the remaining space
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
 
         header.setAlignment(Pos.CENTER);
 
-        header.add(appName, 0, 0); // Add AjungStore to the first column, first row
-        header.add(welcome, 1, 0); // Add Hai, Admin to the second column, first row
+        header.add(appName, 0, 0);
+        header.add(welcome, 1, 0);
 
         borderPane.setTop(header);
 
@@ -61,7 +110,6 @@ public class Penjualan {
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-        // Buat item navigasi
         Barang barang = new Barang();
         Pelanggan pelanggan = new Pelanggan();
         Button navPenjualan = new Button("Penjualan");
@@ -117,12 +165,12 @@ public class Penjualan {
         VBox statPenjualan = new VBox();
         statPenjualan.setAlignment(Pos.CENTER);
         statPenjualan.getStyleClass().add("statPenjualan");
-        HBox.setHgrow(statPenjualan, Priority.ALWAYS); // <-- Mengatur lebar VBox
+        HBox.setHgrow(statPenjualan, Priority.ALWAYS);
 
         Label statPenjualanHeader = new Label("Penjualan");
         statPenjualanHeader.getStyleClass().add("statPenjualanHeader");
 
-        Label statPenjualanContent = new Label("10");
+        Label statPenjualanContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
         statPenjualanContent.getStyleClass().add("statPenjualanContent");
 
         statPenjualan.getChildren().addAll(statPenjualanHeader, statPenjualanContent);
@@ -130,12 +178,12 @@ public class Penjualan {
         VBox statHutang = new VBox();
         statHutang.setAlignment(Pos.CENTER);
         statHutang.getStyleClass().add("statHutang");
-        HBox.setHgrow(statHutang, Priority.ALWAYS); // <-- Mengatur lebar VBox
+        HBox.setHgrow(statHutang, Priority.ALWAYS);
 
         Label statHutangHeader = new Label("Hutang");
         statHutangHeader.getStyleClass().add("statHutangHeader");
 
-        Label statHutangContent = new Label("10");
+        Label statHutangContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
         statHutangContent.getStyleClass().add("statHutangContent");
 
         statHutang.getChildren().addAll(statHutangHeader, statHutangContent);
@@ -143,18 +191,17 @@ public class Penjualan {
         VBox statPiutang = new VBox();
         statPiutang.setAlignment(Pos.CENTER);
         statPiutang.getStyleClass().add("statPiutang");
-        HBox.setHgrow(statPiutang, Priority.ALWAYS); // <-- Mengatur lebar VBox
+        HBox.setHgrow(statPiutang, Priority.ALWAYS);
 
         Label statPiutangHeader = new Label("Piutang");
         statPiutangHeader.getStyleClass().add("statPiutangHeader");
 
-        Label statPiutangContent = new Label("10");
+        Label statPiutangContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
         statPiutangContent.getStyleClass().add("statPiutangContent");
 
         statPiutang.getChildren().addAll(statPiutangHeader, statPiutangContent);
 
         quickStats.getChildren().setAll(statPenjualan, statHutang, statPiutang);
-
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
@@ -193,19 +240,16 @@ public class Penjualan {
 
         TableView<ObservableList<String>> table = new TableView<>();
 
-        // Menambahkan kolom-kolom untuk tabel penjualan (no, nama customer, status, action)
         TableColumn<ObservableList<String>, String> colNo = new TableColumn<>("No");
         TableColumn<ObservableList<String>, String> colNamaCustomer = new TableColumn<>("Nama Customer");
         TableColumn<ObservableList<String>, String> colStatus = new TableColumn<>("Status");
         TableColumn<ObservableList<String>, String> colAction = new TableColumn<>("Action");
 
-        // Mengatur lebar kolom dengan persentase dari lebar total tabel
-        colNo.prefWidthProperty().bind(table.widthProperty().multiply(0.1)); // 10% dari lebar tabel
-        colNamaCustomer.prefWidthProperty().bind(table.widthProperty().multiply(0.4)); // 40% dari lebar tabel
-        colStatus.prefWidthProperty().bind(table.widthProperty().multiply(0.3)); // 30% dari lebar tabel
-        colAction.prefWidthProperty().bind(table.widthProperty().multiply(0.2)); // 20% dari lebar tabel
+        colNo.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
+        colNamaCustomer.prefWidthProperty().bind(table.widthProperty().multiply(0.4));
+        colStatus.prefWidthProperty().bind(table.widthProperty().multiply(0.3));
+        colAction.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
 
-        // Mengatur data kolom dari sumber data
         colNo.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(0)));
         colNamaCustomer.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
         colStatus.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
@@ -215,16 +259,23 @@ public class Penjualan {
 
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
 
-        String[][] pelangganData = {
-            {"1", "John Doe", "LUNAS"},
-            {"2", "Jane Smith", "BELUM LUNAS"},
-            {"3", "Alice Johnson", "LUNAS"},
-        };
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT sales.id, customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
 
-        for (String[] row : pelangganData) {
-            ObservableList<String> rowData = FXCollections.observableArrayList();
-            rowData.addAll(Arrays.asList(row));
-            data.add(rowData);
+            ResultSet resultSet = statement.executeQuery();
+
+            int no = 1;
+            while (resultSet.next()) {
+                ObservableList<String> rowData = FXCollections.observableArrayList();
+                rowData.add(String.valueOf(no++));
+                rowData.add(resultSet.getString("name"));
+                rowData.add(resultSet.getString("status"));
+                data.add(rowData);
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
 
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
@@ -232,18 +283,24 @@ public class Penjualan {
             final Button deleteButton = new Button("Hapus");
 
             {
-                // Handle edit button action
                 editButton.setOnAction(event -> {
                     try {
-                       edit(indexStage);
+                        edit(indexStage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                 });
 
-                // Handle delete button action
                 deleteButton.setOnAction(event -> {
-                    System.out.println("Anda telah menghapus barang transaksi ini");
+                    if (showDeleteConfirmationDialog()) {
+                        ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                        int salesId = Integer.parseInt(rowData.get(0)); // Assuming the sales ID is stored in the first
+                                                                        // column
+                        deleteSalesRecord(salesId);
+
+                        // Refresh the table data after deletion
+                        getTableView().getItems().remove(rowData);
+                    }
                 });
             }
 
@@ -260,8 +317,6 @@ public class Penjualan {
                 }
             }
         });
-
-        // Set the table data
         table.setItems(data);
 
         tableBox.getChildren().addAll(filterBox, buttonBox, table);
@@ -271,11 +326,8 @@ public class Penjualan {
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
 
-
         Scene scene = new Scene(borderPane, 800, 600);
         indexStage.setScene(scene);
-        indexStage.setFullScreen(true);
-        indexStage.setTitle("AjungStore - Index Penjualan");
         indexStage.show();
     }
 
@@ -311,37 +363,37 @@ public class Penjualan {
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-           // Buat item navigasi
-           Barang barang = new Barang();
-           Pelanggan pelanggan = new Pelanggan();
-           Button navPenjualan = new Button("Penjualan");
-           navPenjualan.getStyleClass().add("navPenjualan");
-           navPenjualan.setOnAction(e -> {
-               try {
-                   index(createStage);
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           });
+        // Buat item navigasi
+        Barang barang = new Barang();
+        Pelanggan pelanggan = new Pelanggan();
+        Button navPenjualan = new Button("Penjualan");
+        navPenjualan.getStyleClass().add("navPenjualan");
+        navPenjualan.setOnAction(e -> {
+            try {
+                index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
-           Button navBarang = new Button("Barang");
-           navBarang.getStyleClass().add("navBarang");
-           navBarang.setOnAction(e -> {
-               try {
-                   barang.index(createStage);
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           });
-           Button navPelanggan = new Button("Pelanggan");
-           navPelanggan.getStyleClass().add("navPelanggan");
-           navPelanggan.setOnAction(e -> {
-               try {
-                   pelanggan.index(createStage);
-               } catch (Exception ex) {
-                   ex.printStackTrace();
-               }
-           });
+        Button navBarang = new Button("Barang");
+        navBarang.getStyleClass().add("navBarang");
+        navBarang.setOnAction(e -> {
+            try {
+                barang.index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        Button navPelanggan = new Button("Pelanggan");
+        navPelanggan.getStyleClass().add("navPelanggan");
+        navPelanggan.setOnAction(e -> {
+            try {
+                pelanggan.index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
 
@@ -388,7 +440,8 @@ public class Penjualan {
         namaPelangganInput.getItems().addAll("Andi", "Budi", "Budiman Andi");
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
-        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari nomorFakturField
+        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
+                                                                                                // dari nomorFakturField
         namaPelangganField.getChildren().addAll(namaPelangganLabel, namaPelangganInput);
 
         HBox tanggalField = new HBox();
@@ -400,9 +453,9 @@ public class Penjualan {
         DatePicker tanggalInput = new DatePicker();
         tanggalInput.getStyleClass().add("tanggalInput");
         HBox.setHgrow(tanggalInput, Priority.ALWAYS);
-        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari tanggalField
+        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari
+                                                                                          // tanggalField
         tanggalField.getChildren().addAll(tanggalLabel, tanggalInput);
-
 
         primaryForm.getChildren().addAll(nomorFakturField, namaPelangganField, tanggalField);
 
@@ -426,7 +479,8 @@ public class Penjualan {
         Button tambahDetailTransaksiButton = new Button("Tambah Barang");
         tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
         tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
+        tambahDetailTransaksiButton
+                .setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
 
         HBox totalField = new HBox();
         totalField.setSpacing(100);
@@ -448,7 +502,8 @@ public class Penjualan {
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
-        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton, totalField, totalBayarField);
+        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
+                totalField, totalBayarField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -492,7 +547,6 @@ public class Penjualan {
         createStage.show();
     }
 
-
     public void edit(Stage editStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/editPenjualan.css").toExternalForm();
@@ -525,37 +579,37 @@ public class Penjualan {
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-         // Buat item navigasi
-         Barang barang = new Barang();
-         Pelanggan pelanggan = new Pelanggan();
-         Button navPenjualan = new Button("Penjualan");
-         navPenjualan.getStyleClass().add("navPenjualan");
-         navPenjualan.setOnAction(e -> {
-             try {
-                 index(editStage);
-             } catch (Exception ex) {
-                 ex.printStackTrace();
-             }
-         });
+        // Buat item navigasi
+        Barang barang = new Barang();
+        Pelanggan pelanggan = new Pelanggan();
+        Button navPenjualan = new Button("Penjualan");
+        navPenjualan.getStyleClass().add("navPenjualan");
+        navPenjualan.setOnAction(e -> {
+            try {
+                index(editStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
-         Button navBarang = new Button("Barang");
-         navBarang.getStyleClass().add("navBarang");
-         navBarang.setOnAction(e -> {
-             try {
-                 barang.index(editStage);
-             } catch (Exception ex) {
-                 ex.printStackTrace();
-             }
-         });
-         Button navPelanggan = new Button("Pelanggan");
-         navPelanggan.getStyleClass().add("navPelanggan");
-         navPelanggan.setOnAction(e -> {
-             try {
-                 pelanggan.index(editStage);
-             } catch (Exception ex) {
-                 ex.printStackTrace();
-             }
-         });
+        Button navBarang = new Button("Barang");
+        navBarang.getStyleClass().add("navBarang");
+        navBarang.setOnAction(e -> {
+            try {
+                barang.index(editStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        Button navPelanggan = new Button("Pelanggan");
+        navPelanggan.getStyleClass().add("navPelanggan");
+        navPelanggan.setOnAction(e -> {
+            try {
+                pelanggan.index(editStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
 
@@ -602,7 +656,8 @@ public class Penjualan {
         namaPelangganInput.getItems().addAll("Andi", "Budi", "Budiman Andi");
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
-        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari nomorFakturField
+        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
+                                                                                                // dari nomorFakturField
         namaPelangganField.getChildren().addAll(namaPelangganLabel, namaPelangganInput);
 
         HBox tanggalField = new HBox();
@@ -614,9 +669,9 @@ public class Penjualan {
         DatePicker tanggalInput = new DatePicker();
         tanggalInput.getStyleClass().add("tanggalInput");
         HBox.setHgrow(tanggalInput, Priority.ALWAYS);
-        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari tanggalField
+        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari
+                                                                                          // tanggalField
         tanggalField.getChildren().addAll(tanggalLabel, tanggalInput);
-
 
         primaryForm.getChildren().addAll(nomorFakturField, namaPelangganField, tanggalField);
 
@@ -640,7 +695,8 @@ public class Penjualan {
         Button tambahDetailTransaksiButton = new Button("Tambah Barang");
         tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
         tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
+        tambahDetailTransaksiButton
+                .setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
 
         HBox totalField = new HBox();
         totalField.setSpacing(100);
@@ -662,7 +718,8 @@ public class Penjualan {
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
-        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton, totalField, totalBayarField);
+        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
+                totalField, totalBayarField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -757,11 +814,11 @@ public class Penjualan {
         hapusDetailButtonField.getChildren().addAll(hapusDetailButtonEmptyLabel, hapusDetailButton);
         hapusDetailButton.setOnAction(e -> {
             // Remove the row from the grid
-            grid.getChildren().removeAll(namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
+            grid.getChildren().removeAll(namaBarangField, hargaSatuanField, kuantitasField, subtotalField,
+                    hapusDetailButtonField);
         });
 
         grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
     }
 
 }
-
