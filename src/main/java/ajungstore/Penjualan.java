@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Optional;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -16,6 +17,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -35,6 +38,47 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Penjualan {
+
+    private void deleteSalesRecord(int salesId) {
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement deleteDetailsStmt = connection
+                        .prepareStatement("DELETE FROM sales_details WHERE salesId = ?");
+                PreparedStatement deleteSalesStmt = connection.prepareStatement("DELETE FROM sales WHERE id = ?")) {
+
+            // Start a transaction
+            connection.setAutoCommit(false);
+
+            // Delete from sales_details first
+            deleteDetailsStmt.setInt(1, salesId);
+            deleteDetailsStmt.executeUpdate();
+
+            // Delete from sales
+            deleteSalesStmt.setInt(1, salesId);
+            deleteSalesStmt.executeUpdate();
+
+            // Commit the transaction
+            connection.commit();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private boolean showDeleteConfirmationDialog() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Confirmation");
+        alert.setHeaderText(null);
+        alert.setContentText("Are you sure you want to delete this sales record?");
+
+        ButtonType buttonTypeYes = new ButtonType("Yes");
+        ButtonType buttonTypeNo = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(buttonTypeYes, buttonTypeNo);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == buttonTypeYes;
+    }
+
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/indexPenjualan.css").toExternalForm();
@@ -217,7 +261,7 @@ public class Penjualan {
 
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement statement = connection.prepareStatement(
-                        "SELECT customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
+                        "SELECT sales.id, customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
 
             ResultSet resultSet = statement.executeQuery();
 
@@ -248,7 +292,15 @@ public class Penjualan {
                 });
 
                 deleteButton.setOnAction(event -> {
-                    System.out.println("Anda telah menghapus barang transaksi ini");
+                    if (showDeleteConfirmationDialog()) {
+                        ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                        int salesId = Integer.parseInt(rowData.get(0)); // Assuming the sales ID is stored in the first
+                                                                        // column
+                        deleteSalesRecord(salesId);
+
+                        // Refresh the table data after deletion
+                        getTableView().getItems().remove(rowData);
+                    }
                 });
             }
 
@@ -265,7 +317,6 @@ public class Penjualan {
                 }
             }
         });
-
         table.setItems(data);
 
         tableBox.getChildren().addAll(filterBox, buttonBox, table);
