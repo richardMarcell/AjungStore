@@ -1,0 +1,86 @@
+.header {
+  -fx-border-style: solid;
+  -fx-border-width: 0 0 0.5 0;
+  -fx-border-color: grey;
+  -fx-padding: 0px 16px 0px 16px;
+}
+
+.sidebar {
+  -fx-border-style: solid;
+  -fx-border-width: 0 0.5 0 0;
+  -fx-border-color: grey;
+  -fx-padding: 20px;
+}
+
+.appName {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+  -fx-font-style: italic;
+}
+
+.welcome {
+  -fx-font-size: 16px;
+}
+
+.navBarang {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+  -fx-background-color: none;
+}
+
+.navPelanggan {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+  -fx-background-color: none;
+}
+
+.navPenjualan {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+  -fx-background-color: none;
+}
+
+.contentBox {
+  -fx-padding: 10px 10px 10px 10px;
+}
+
+.contentHeaderTitle {
+  -fx-font-size: 20px;
+  -fx-font-weight: bold;
+}
+
+.contentHeaderDescription {
+  -fx-font-size: 14px;
+}
+
+.namaBarangLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.namaBarangInput {
+  -fx-padding: 10px 4px;
+}
+
+.hargaSatuanLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.hargaSatuanInput {
+  -fx-padding: 10px 4px;
+}
+
+.submitButton {
+  -fx-background-color: #000000;
+  -fx-border-radius: 10px;
+  -fx-padding: 8px 15px;
+  -font-weight: bold;
+}
+
+.backButton {
+  -fx-background-color: #bbbbbb;
+  -fx-border-radius: 10px;
+  -fx-padding: 8px 15px;
+  -font-weight: bold;
+}
