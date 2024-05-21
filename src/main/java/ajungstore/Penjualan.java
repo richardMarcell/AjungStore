@@ -65,10 +65,10 @@ public class Penjualan {
     }
 
     private boolean showDeleteConfirmationDialog() {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Delete Confirmation");
+        Alert alert = new Alert(AlertType.CONFIRMATION);
+        alert.setTitle("Konfirmasi Penghapusan");
         alert.setHeaderText(null);
-        alert.setContentText("Are you sure you want to delete this sales record?");
+        alert.setContentText("Apakah Anda yakin ingin menghapus data penjualan ini?");
 
         ButtonType buttonTypeYes = new ButtonType("Yes");
         ButtonType buttonTypeNo = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
