@@ -4,15 +4,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
-
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -34,10 +35,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class Penjualan {
+    private double totalPenjualan = 0.0;
+    NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
 
     private void deleteSalesRecord(int salesId) {
         try (Connection connection = Dbconnect.getConnect();
@@ -437,7 +439,9 @@ public class Penjualan {
         namaPelangganLabel.getStyleClass().add("namaPelangganLabel");
         namaPelangganLabel.setMinWidth(Region.USE_PREF_SIZE); // Menentukan lebar minimum agar tidak terpotong
         ComboBox<String> namaPelangganInput = new ComboBox<>();
-        namaPelangganInput.getItems().addAll("Andi", "Budi", "Budiman Andi");
+        CustomerService customerService = new CustomerService();
+        List<String> customerNames = customerService.getAllCustomerNames();
+        namaPelangganInput.getItems().addAll(customerNames);
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -488,8 +492,9 @@ public class Penjualan {
         Label totalLabel = new Label("Total");
         totalLabel.getStyleClass().add("totalLabel");
         TextField totalInput = new TextField();
+        totalInput.setEditable(false); // Jangan biarkan pengguna mengedit total secara manual
         totalInput.getStyleClass().add("totalInput");
-        // HBox.setHgrow(totalInput, Priority.ALWAYS);
+        totalInput.setText(currencyFormat.format(totalPenjualan));
         totalField.getChildren().addAll(totalLabel, totalInput);
 
         HBox totalBayarField = new HBox();
@@ -764,6 +769,7 @@ public class Penjualan {
     }
 
     private void addSecondaryFormField(GridPane grid, int rowIndex) {
+        ProductService productService = new ProductService();
         VBox namaBarangField = new VBox();
         namaBarangField.setSpacing(10);
         Label namaBarangLabel = new Label("Nama Barang");
@@ -771,7 +777,8 @@ public class Penjualan {
         ComboBox<String> namaBarangInput = new ComboBox<>();
         namaBarangInput.setMinWidth(600);
         namaBarangInput.setMinHeight(20);
-        namaBarangInput.getItems().addAll("Pepsodent", "Rinso", "Blueband");
+        List<String> productNames = productService.getAllProductName();
+        namaBarangInput.getItems().addAll(productNames);
         namaBarangInput.getStyleClass().add("namaBarangInput");
         namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
 
@@ -784,6 +791,14 @@ public class Penjualan {
         hargaSatuanInput.setMinHeight(20);
         hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
         hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
+        hargaSatuanInput.setDisable(true); // Menonaktifkan input
+
+        // Tambahkan listener ke ComboBox untuk mengupdate harga satuan
+        namaBarangInput.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                hargaSatuanInput.setText(currencyFormat.format(productService.getProductPrice(newValue)));
+            }
+        });
 
         VBox kuantitasField = new VBox();
         kuantitasField.setSpacing(10);
@@ -804,6 +819,26 @@ public class Penjualan {
         subtotalInput.setMinHeight(20);
         subtotalInput.getStyleClass().add("subtotalInput");
         subtotalField.getChildren().addAll(subtotalLabel, subtotalInput);
+
+        // Tambahkan listener ke TextField kuantitasInput
+        kuantitasInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    int kuantitas = Integer.parseInt(newValue);
+                    double hargaSatuan = currencyFormat.parse(hargaSatuanInput.getText()).doubleValue(); // Ubah ke
+                                                                                                         // double
+                    double subtotal = kuantitas * hargaSatuan;
+                    totalPenjualan += subtotal;
+                    subtotalInput.setText(currencyFormat.format(subtotal)); // Format subtotal
+                } catch (ParseException e) {
+                    // Handle jika input tidak valid
+                    subtotalInput.setText("0,00"); // Atau bisa juga dikosongkan
+                }
+            } else {
+                // Jika input kuantitas kosong, kosongkan juga subtotal
+                subtotalInput.setText("");
+            }
+        });
 
         VBox hapusDetailButtonField = new VBox();
         hapusDetailButtonField.setSpacing(10);
