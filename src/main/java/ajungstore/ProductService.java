@@ -23,7 +23,7 @@ public class ProductService {
     return productNames;
   }
 
-  public int getProductId(String productName) {
+  public int getProductIdByName(String productName) {
     int productId = -1; // Set default value to handle cases where no product is found
     String query = "SELECT id FROM products WHERE name = ?";
     try (Connection connection = Dbconnect.getConnect();

@@ -4,11 +4,18 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,6 +34,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -36,10 +44,65 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.converter.IntegerStringConverter;
 
 public class Penjualan {
     private double totalPenjualan = 0.0;
+    private int totalKuantitas = 0;
     NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+    private List<SalesDetailService> daftarDetailTransaksi = new ArrayList<>();
+
+    public int storeSales(SalesService salesService) {
+        String insertSalesSQL = "INSERT INTO sales (customerId, userId, transactionDate, status, numberFactur, totalQuantity, totalSales, totalPayment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement preparedStatement = connection.prepareStatement(insertSalesSQL,
+                        Statement.RETURN_GENERATED_KEYS)) {
+
+            preparedStatement.setInt(1, salesService.getCustomerId());
+            preparedStatement.setInt(2, salesService.getUserId());
+            preparedStatement.setDate(3, java.sql.Date.valueOf(salesService.getTransactionDate()));
+            preparedStatement.setString(4, salesService.getStatus());
+            preparedStatement.setString(5, salesService.getNumberFactur());
+            preparedStatement.setInt(6, salesService.getTotalQuantity());
+            preparedStatement.setDouble(7, salesService.getTotalSales());
+            preparedStatement.setDouble(8, salesService.getTotalPayment());
+
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        return generatedKeys.getInt(1); // Return the generated sale ID
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0; //
+
+    }
+
+    public void storeSalesDetail(int salesId) {
+        try (Connection connection = Dbconnect.getConnect()) {
+            String sql = "INSERT INTO sales_details (salesId, productId, price, quantity) VALUES (?, ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(sql);
+
+            ProductService productService = new ProductService();
+            for (SalesDetailService detail : daftarDetailTransaksi) {
+                statement.setInt(1, salesId);
+                statement.setInt(2, detail.getProductId());
+                statement.setDouble(3, detail.getPrice());
+                statement.setInt(4, detail.getQuantity());
+
+                statement.addBatch();
+            }
+
+            statement.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void deleteSalesRecord(int salesId) {
         try (Connection connection = Dbconnect.getConnect();
@@ -243,27 +306,32 @@ public class Penjualan {
         TableView<ObservableList<String>> table = new TableView<>();
 
         TableColumn<ObservableList<String>, String> colNo = new TableColumn<>("No");
+        TableColumn<ObservableList<String>, String> colTanggalTransaksi = new TableColumn<>("Tanggal");
         TableColumn<ObservableList<String>, String> colNamaCustomer = new TableColumn<>("Nama Customer");
         TableColumn<ObservableList<String>, String> colStatus = new TableColumn<>("Status");
         TableColumn<ObservableList<String>, String> colAction = new TableColumn<>("Action");
 
         colNo.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
-        colNamaCustomer.prefWidthProperty().bind(table.widthProperty().multiply(0.4));
-        colStatus.prefWidthProperty().bind(table.widthProperty().multiply(0.3));
+        colTanggalTransaksi.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
+        colNamaCustomer.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
+        colStatus.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
         colAction.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
 
         colNo.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(0)));
-        colNamaCustomer.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
-        colStatus.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
+        colTanggalTransaksi.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
+        colNamaCustomer.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
+        colStatus.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(3)));
         colAction.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(""));
 
-        table.getColumns().addAll(colNo, colNamaCustomer, colStatus, colAction);
+        table.getColumns().addAll(colNo, colTanggalTransaksi, colNamaCustomer, colStatus, colAction);
 
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement statement = connection.prepareStatement(
-                        "SELECT sales.id, customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
+                        "SELECT sales.id, sales.transactionDate, customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
 
             ResultSet resultSet = statement.executeQuery();
 
@@ -271,8 +339,12 @@ public class Penjualan {
             while (resultSet.next()) {
                 ObservableList<String> rowData = FXCollections.observableArrayList();
                 rowData.add(String.valueOf(no++));
+                LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
+                String formattedDate = transactionDate.format(formatter);
+                rowData.add(formattedDate);
                 rowData.add(resultSet.getString("name"));
                 rowData.add(resultSet.getString("status"));
+                rowData.add(resultSet.getString("id"));
                 data.add(rowData);
             }
 
@@ -296,8 +368,7 @@ public class Penjualan {
                 deleteButton.setOnAction(event -> {
                     if (showDeleteConfirmationDialog()) {
                         ObservableList<String> rowData = getTableView().getItems().get(getIndex());
-                        int salesId = Integer.parseInt(rowData.get(0)); // Assuming the sales ID is stored in the first
-                                                                        // column
+                        int salesId = Integer.parseInt(rowData.get(4));
                         deleteSalesRecord(salesId);
 
                         // Refresh the table data after deletion
@@ -477,14 +548,9 @@ public class Penjualan {
         secondaryFormGrid.setHgap(10);
         secondaryFormGrid.setVgap(10);
 
-        // Set up the initial rows for the secondary form
-        addSecondaryFormField(secondaryFormGrid, 0);
-
         Button tambahDetailTransaksiButton = new Button("Tambah Barang");
         tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
         tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        tambahDetailTransaksiButton
-                .setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
 
         HBox totalField = new HBox();
         totalField.setSpacing(100);
@@ -492,10 +558,14 @@ public class Penjualan {
         Label totalLabel = new Label("Total");
         totalLabel.getStyleClass().add("totalLabel");
         TextField totalInput = new TextField();
-        totalInput.setEditable(false); // Jangan biarkan pengguna mengedit total secara manual
+        totalInput.setEditable(false);
         totalInput.getStyleClass().add("totalInput");
         totalInput.setText(currencyFormat.format(totalPenjualan));
         totalField.getChildren().addAll(totalLabel, totalInput);
+
+        addSecondaryFormField(secondaryFormGrid, 0, total -> totalInput.setText(currencyFormat.format(total)));
+        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormField(secondaryFormGrid,
+                secondaryFormGrid.getRowCount(), total -> totalInput.setText(currencyFormat.format(total))));
 
         HBox totalBayarField = new HBox();
         totalBayarField.setSpacing(60);
@@ -531,7 +601,36 @@ public class Penjualan {
         submitButton.setOnAction(e -> {
             System.out.println("Berhasil menyimpan data barang");
             try {
-                index(createStage);
+                SalesService salesService = new SalesService();
+                salesService.setCustomerId(customerService.getCustomerIdByName(namaPelangganInput.getValue()));
+                salesService.setUserId(1); // Asumsikan userId 1 untuk Admin, bisa diubah sesuai konteks
+                salesService.setTransactionDate(tanggalInput.getValue());
+
+                String status = totalPenjualan > Double.parseDouble(totalBayarInput.getText()) ? "BELUM_LUNAS"
+                        : "LUNAS";
+                salesService.setStatus(status); // Atur status default
+                salesService.setNumberFactur(nomorFakturInput.getText());
+                salesService.setTotalQuantity(totalKuantitas);
+                salesService.setTotalSales(totalPenjualan);
+
+                Double totalPembayaran = totalPenjualan > Double.parseDouble(totalBayarInput.getText())
+                        ? Double.parseDouble(totalBayarInput.getText())
+                        : totalPenjualan;
+                salesService.setTotalPayment(totalPembayaran);
+
+                int saleId = storeSales(salesService);
+
+                ProductService productService = new ProductService();
+                if (saleId > 0) {
+                    storeSalesDetail(saleId);
+
+                    totalKuantitas = 0;
+                    totalPenjualan = 0.0;
+                    index(createStage);
+                } else {
+                    System.out.println("Gagal menambah data penjualan");
+                }
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -694,14 +793,15 @@ public class Penjualan {
         secondaryFormGrid.setHgap(10);
         secondaryFormGrid.setVgap(10);
 
-        // Set up the initial rows for the secondary form
-        addSecondaryFormField(secondaryFormGrid, 0);
+        // // Set up the initial rows for the secondary form
+        // addSecondaryFormField(secondaryFormGrid, 0);
 
-        Button tambahDetailTransaksiButton = new Button("Tambah Barang");
-        tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
-        tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        tambahDetailTransaksiButton
-                .setOnAction(e -> addSecondaryFormField(secondaryFormGrid, secondaryFormGrid.getRowCount()));
+        // Button tambahDetailTransaksiButton = new Button("Tambah Barang");
+        // tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
+        // tambahDetailTransaksiButton.setTextFill(Color.WHITE);
+        // tambahDetailTransaksiButton
+        // .setOnAction(e -> addSecondaryFormField(secondaryFormGrid,
+        // secondaryFormGrid.getRowCount()));
 
         HBox totalField = new HBox();
         totalField.setSpacing(100);
@@ -723,8 +823,9 @@ public class Penjualan {
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
-        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
-                totalField, totalBayarField);
+        // secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid,
+        // tambahDetailTransaksiButton,
+        // totalField, totalBayarField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -768,7 +869,7 @@ public class Penjualan {
         editStage.show();
     }
 
-    private void addSecondaryFormField(GridPane grid, int rowIndex) {
+    private void addSecondaryFormField(GridPane grid, int rowIndex, Consumer<Double> totalUpdater) {
         ProductService productService = new ProductService();
         VBox namaBarangField = new VBox();
         namaBarangField.setSpacing(10);
@@ -791,7 +892,7 @@ public class Penjualan {
         hargaSatuanInput.setMinHeight(20);
         hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
         hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
-        hargaSatuanInput.setDisable(true); // Menonaktifkan input
+        hargaSatuanInput.setEditable(false); // Menonaktifkan input
 
         // Tambahkan listener ke ComboBox untuk mengupdate harga satuan
         namaBarangInput.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -808,6 +909,21 @@ public class Penjualan {
         kuantitasInput.setMinWidth(100);
         kuantitasInput.setMinHeight(20);
         kuantitasInput.getStyleClass().add("kuantitasInput");
+
+        // UnaryOperator untuk memfilter input agar hanya angka yang diterima
+        UnaryOperator<TextFormatter.Change> filter = change -> {
+            String newText = change.getControlNewText();
+            if (newText.matches("\\d*")) {
+                return change;
+            }
+            return null;
+        };
+
+        // Membuat TextFormatter dengan IntegerStringConverter untuk mengonversi ke
+        // Integer
+        TextFormatter<Integer> textFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, filter);
+        kuantitasInput.setTextFormatter(textFormatter);
+
         kuantitasField.getChildren().addAll(kuantitasLabel, kuantitasInput);
 
         VBox subtotalField = new VBox();
@@ -817,6 +933,7 @@ public class Penjualan {
         TextField subtotalInput = new TextField();
         subtotalInput.setMinWidth(150);
         subtotalInput.setMinHeight(20);
+        subtotalInput.setEditable(false);
         subtotalInput.getStyleClass().add("subtotalInput");
         subtotalField.getChildren().addAll(subtotalLabel, subtotalInput);
 
@@ -825,17 +942,30 @@ public class Penjualan {
             if (!newValue.isEmpty()) {
                 try {
                     int kuantitas = Integer.parseInt(newValue);
-                    double hargaSatuan = currencyFormat.parse(hargaSatuanInput.getText()).doubleValue(); // Ubah ke
-                                                                                                         // double
+                    double hargaSatuan = currencyFormat.parse(hargaSatuanInput.getText()).doubleValue();
                     double subtotal = kuantitas * hargaSatuan;
-                    totalPenjualan += subtotal;
-                    subtotalInput.setText(currencyFormat.format(subtotal)); // Format subtotal
+
+                    SalesDetailService detail = new SalesDetailService();
+                    detail.setProductId(productService.getProductIdByName(namaBarangInput.getValue()));
+                    detail.setPrice(hargaSatuan);
+                    detail.setQuantity(kuantitas);
+
+                    daftarDetailTransaksi.add(detail);
+
+                    // Hitung perbedaan subtotal dari kuantitas yang sebelumnya
+                    double oldSubtotal = oldValue.isEmpty() ? 0.0 : Integer.parseInt(oldValue) * hargaSatuan;
+                    double diff = subtotal - oldSubtotal;
+
+                    // Kurangi atau tambahkan ke total penjualan
+                    totalPenjualan += diff;
+                    totalKuantitas += kuantitas;
+
+                    subtotalInput.setText(currencyFormat.format(subtotal));
+                    totalUpdater.accept(totalPenjualan);
                 } catch (ParseException e) {
-                    // Handle jika input tidak valid
-                    subtotalInput.setText("0,00"); // Atau bisa juga dikosongkan
+                    subtotalInput.setText("0,00");
                 }
             } else {
-                // Jika input kuantitas kosong, kosongkan juga subtotal
                 subtotalInput.setText("");
             }
         });

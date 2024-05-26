@@ -1,6 +1,7 @@
 package ajungstore;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -21,4 +22,21 @@ public class CustomerService {
     }
     return customerNames;
   }
+
+  public int getCustomerIdByName(String name) {
+    String sql = "SELECT id FROM customers WHERE name = ?";
+    try (Connection connection = Dbconnect.getConnect();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+      preparedStatement.setString(1, name);
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        if (resultSet.next()) {
+          return resultSet.getInt("id");
+        }
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return 0;
+  }
+
 }
