@@ -52,6 +52,14 @@ public class Penjualan {
     NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
     private List<SalesDetailService> daftarDetailTransaksi = new ArrayList<>();
 
+    private void showAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     public int storeSales(SalesService salesService) {
         String insertSalesSQL = "INSERT INTO sales (customerId, userId, transactionDate, status, numberFactur, totalQuantity, totalSales, totalPayment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = Dbconnect.getConnect();
@@ -127,21 +135,6 @@ public class Penjualan {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private boolean showDeleteConfirmationDialog() {
-        Alert alert = new Alert(AlertType.CONFIRMATION);
-        alert.setTitle("Konfirmasi Penghapusan");
-        alert.setHeaderText(null);
-        alert.setContentText("Apakah Anda yakin ingin menghapus data penjualan ini?");
-
-        ButtonType buttonTypeYes = new ButtonType("Yes");
-        ButtonType buttonTypeNo = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-        alert.getButtonTypes().setAll(buttonTypeYes, buttonTypeNo);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        return result.isPresent() && result.get() == buttonTypeYes;
     }
 
     public void index(Stage indexStage) throws Exception {
@@ -366,13 +359,18 @@ public class Penjualan {
                 });
 
                 deleteButton.setOnAction(event -> {
-                    if (showDeleteConfirmationDialog()) {
-                        ObservableList<String> rowData = getTableView().getItems().get(getIndex());
-                        int salesId = Integer.parseInt(rowData.get(4));
-                        deleteSalesRecord(salesId);
+                    ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                    int salesId = Integer.parseInt(rowData.get(4));
 
-                        // Refresh the table data after deletion
-                        getTableView().getItems().remove(rowData);
+                    Alert alert = new Alert(AlertType.CONFIRMATION);
+                    alert.setTitle("Konfirmasi Penghapusan");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Apakah Anda yakin ingin menghapus penjualan ini?");
+
+                    Optional<ButtonType> result = alert.showAndWait();
+                    if (result.isPresent() && result.get() == ButtonType.OK) {
+                        deleteSalesRecord(salesId);
+                        getTableView().getItems().remove(rowData); // Remove from table view
                     }
                 });
             }
@@ -599,6 +597,25 @@ public class Penjualan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+            if (nomorFakturInput.getText().isEmpty()) {
+                showAlert("Nomor Faktur harus diisi");
+                return;
+            }
+
+            if (namaPelangganInput.getValue() == null || namaPelangganInput.getValue().isEmpty()) {
+                showAlert("Nama Pelanggan harus dipilih");
+                return;
+            }
+
+            if (tanggalInput.getValue() == null) {
+                showAlert("Tanggal harus diisi");
+                return;
+            }
+
+            if (totalBayarInput.getText().isEmpty() || Double.parseDouble(totalBayarInput.getText()) < 0) {
+                showAlert("Total Bayar harus diisi dan lebih besar atau sama dengan 0");
+                return;
+            }
             System.out.println("Berhasil menyimpan data barang");
             try {
                 SalesService salesService = new SalesService();
