@@ -1,12 +1,12 @@
 package ajungstore;
 
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
-
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -34,27 +34,60 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+
 public class Pelanggan {
-    private void deleteCustomerRecord(int customerId) {
+    private void saveCustomer(String name, String phoneNumber, String address) {
         try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement deleteSalesStmt = connection.prepareStatement("DELETE FROM customers WHERE id = ?")) {
-
-            // Start a transaction
-            connection.setAutoCommit(false);
-
-            // Delete from sales_details first
-
-            // Delete from sales
-            deleteSalesStmt.setInt(1, customerId);
-            deleteSalesStmt.executeUpdate();
-
-            // Commit the transaction
-            connection.commit();
-
+             PreparedStatement statement = connection.prepareStatement(
+                     "INSERT INTO customers (name, phoneNumber, address) VALUES (?, ?, ?)")) {
+            statement.setString(1, name);
+            statement.setString(2, phoneNumber);
+            statement.setString(3, address);
+            statement.executeUpdate();
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
     }
+
+
+    private void deleteCustomerRecord(int customerId) {
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement deleteCustomersStmt = connection.prepareStatement("DELETE FROM customers WHERE id = ?")) {
+
+
+            // Start a transaction
+            connection.setAutoCommit(false);
+            // Delete from sales_details first
+            // Delete from sales
+            deleteCustomersStmt.setInt(1, customerId);
+            deleteCustomersStmt.executeUpdate();
+
+
+            // Commit the transaction
+            connection.commit();
+
+            ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
+            try (PreparedStatement statement = connection.prepareStatement("SELECT name, phoneNumber FROM customers");
+                 ResultSet resultSet = statement.executeQuery()) {
+    
+                int index = 1;
+                while (resultSet.next()) {
+                    ObservableList<String> row = FXCollections.observableArrayList();
+                    row.add(String.valueOf(index++));
+                    row.add(resultSet.getString("name"));
+                    row.add(resultSet.getString("phoneNumber"));
+                    data.add(row);
+                }
+            }
+        
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+
+
+
 
     private boolean showDeleteConfirmationDialog() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -62,45 +95,58 @@ public class Pelanggan {
         alert.setHeaderText(null);
         alert.setContentText("Are you sure you want to delete this sales record?");
 
+
         ButtonType buttonTypeYes = new ButtonType("Yes");
         ButtonType buttonTypeNo = new ButtonType("No", ButtonBar.ButtonData.CANCEL_CLOSE);
 
+
         alert.getButtonTypes().setAll(buttonTypeYes, buttonTypeNo);
+
 
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && result.get() == buttonTypeYes;
     }
+
 
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/indexPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
+
         GridPane header = new GridPane();
         header.setMinHeight(80);
         header.getStyleClass().add("header");
+
 
         Label appName = new Label("AjungStore");
         appName.setTextFill(Color.RED);
         appName.getStyleClass().add("appName");
 
+
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
+
 
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
 
+
         header.setAlignment(Pos.CENTER);
+
 
         header.add(appName, 0, 0);
         header.add(welcome, 1, 0);
 
+
         borderPane.setTop(header);
+
 
         VBox sidebar = new VBox();
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
+
 
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
@@ -113,6 +159,7 @@ public class Pelanggan {
                 ex.printStackTrace();
             }
         });
+
 
         Button navBarang = new Button("Barang");
         navBarang.getStyleClass().add("navBarang");
@@ -133,22 +180,29 @@ public class Pelanggan {
             }
         });
 
+
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
         contentBox.setSpacing(10);
 
+
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
+
 
         Label contentHeaderTitle = new Label("Dashboard Pelanggan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
+
         Label contentHeaderDescription = new Label("Pengelolaan daftar pelanggan Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
+
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
+
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
@@ -158,6 +212,7 @@ public class Pelanggan {
         buttonCreate.setTextFill(Color.WHITE);
         buttonCreate.setMinWidth(150);
 
+
         buttonCreate.setOnAction(e -> {
             try {
                 create(indexStage);
@@ -166,31 +221,39 @@ public class Pelanggan {
             }
         });
 
+
         TableView<ObservableList<String>> table = new TableView<>();
+
 
         TableColumn<ObservableList<String>, String> colNo = new TableColumn<>("No");
         TableColumn<ObservableList<String>, String> colNamaCustomer = new TableColumn<>("Nama");
         TableColumn<ObservableList<String>, String> colStatus = new TableColumn<>("Nomor Telepon");
         TableColumn<ObservableList<String>, String> colAction = new TableColumn<>("Action");
 
+
         colNo.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
         colNamaCustomer.prefWidthProperty().bind(table.widthProperty().multiply(0.4));
         colStatus.prefWidthProperty().bind(table.widthProperty().multiply(0.3));
         colAction.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
+
 
         colNo.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(0)));
         colNamaCustomer.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
         colStatus.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
         colAction.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(""));
 
+
         table.getColumns().addAll(colNo, colNamaCustomer, colStatus, colAction);
 
+
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
+
 
         // Ambil data dari database
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement statement = connection.prepareStatement("SELECT name, phoneNumber FROM customers");
                 ResultSet resultSet = statement.executeQuery()) {
+
 
             int index = 1;
             while (resultSet.next()) {
@@ -204,9 +267,11 @@ public class Pelanggan {
             ex.printStackTrace();
         }
 
+
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
             final Button editButton = new Button("Edit");
             final Button deleteButton = new Button("Hapus");
+
 
             {
                 // Handle edit button action
@@ -218,16 +283,19 @@ public class Pelanggan {
                     }
                 });
 
+
                 // Handle delete button action
                 deleteButton.setOnAction(event -> {
                     ObservableList<String> rowData = getTableView().getItems().get(getIndex());
                     int id = Integer.parseInt(rowData.get(0)); // Assuming the ID is in the first column
+
 
                     // Show confirmation dialog
                     Alert alert = new Alert(AlertType.CONFIRMATION);
                     alert.setTitle("Konfirmasi Penghapusan");
                     alert.setHeaderText(null);
                     alert.setContentText("Apakah Anda yakin ingin menghapus barang ini?");
+
 
                     Optional<ButtonType> result = alert.showAndWait();
                     if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -237,9 +305,11 @@ public class Pelanggan {
                 });
             }
 
+
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
+
 
                 if (empty) {
                     setGraphic(null);
@@ -252,12 +322,16 @@ public class Pelanggan {
         });
         table.setItems(data);
 
+
         tableBox.getChildren().addAll(buttonCreate, table);
+
 
         contentBox.getChildren().addAll(contentHeaderBox, tableBox);
 
+
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
+
 
         Scene scene = new Scene(borderPane, 800, 600);
         indexStage.setScene(scene);
@@ -266,37 +340,47 @@ public class Pelanggan {
         indexStage.show();
     }
 
+
     public void create(Stage createStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/createPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
+
         GridPane header = new GridPane();
         header.setMinHeight(80);
         header.getStyleClass().add("header");
+
 
         Label appName = new Label("AjungStore");
         appName.setTextFill(Color.RED);
         appName.getStyleClass().add("appName");
 
+
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
+
 
         // Set the first column to expand to take the remaining space
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
 
+
         header.setAlignment(Pos.CENTER);
+
 
         header.add(appName, 0, 0); // Add AjungStore to the first column, first row
         header.add(welcome, 1, 0); // Add Hai, Admin to the second column, first row
 
+
         borderPane.setTop(header);
+
 
         VBox sidebar = new VBox();
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
+
 
         // Buat item navigasi
         Barang barang = new Barang();
@@ -310,6 +394,7 @@ public class Pelanggan {
                 ex.printStackTrace();
             }
         });
+
 
         Button navBarang = new Button("Barang");
         navBarang.getStyleClass().add("navBarang");
@@ -330,30 +415,39 @@ public class Pelanggan {
             }
         });
 
+
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
         contentBox.setSpacing(30);
 
+
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
+
 
         Label contentHeaderTitle = new Label("Tambah Pelanggan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
+
         Label contentHeaderDescription = new Label("Menambah pelanggan di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
+
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
+
 
         VBox formBox = new VBox();
         formBox.getStyleClass().add("formBox");
         formBox.setSpacing(20);
 
+
         VBox primaryForm = new VBox();
         primaryForm.setSpacing(30);
         primaryForm.getStyleClass().add("primaryForm");
+
 
         HBox namaField = new HBox();
         namaField.setSpacing(60);
@@ -365,6 +459,7 @@ public class Pelanggan {
         HBox.setHgrow(namaInput, Priority.ALWAYS);
         namaField.getChildren().addAll(namaLabel, namaInput);
 
+
         HBox nomorTeleponField = new HBox();
         nomorTeleponField.setSpacing(60);
         nomorTeleponField.setAlignment(Pos.CENTER_LEFT);
@@ -374,6 +469,7 @@ public class Pelanggan {
         nomorTeleponInput.getStyleClass().add("nomorTeleponInput");
         HBox.setHgrow(nomorTeleponInput, Priority.ALWAYS);
         nomorTeleponField.getChildren().addAll(nomorTeleponLabel, nomorTeleponInput);
+
 
         HBox alamatField = new HBox();
         alamatField.setSpacing(60);
@@ -385,12 +481,16 @@ public class Pelanggan {
         HBox.setHgrow(alamatInput, Priority.ALWAYS);
         alamatField.getChildren().addAll(alamatLabel, alamatInput);
 
+
         primaryForm.getChildren().addAll(namaField, nomorTeleponField, alamatField);
+
 
         formBox.getChildren().addAll(primaryForm);
 
+
         HBox contentFooterBox = new HBox();
         contentFooterBox.setSpacing(20);
+
 
         Button backButton = new Button("Kembali");
         backButton.getStyleClass().add("backButton");
@@ -402,10 +502,15 @@ public class Pelanggan {
             }
         });
 
+
         Button submitButton = new Button("Simpan");
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+            String name = namaInput.getText();
+            String phoneNumber = nomorTeleponInput.getText();
+            String address = alamatInput.getText();
+            saveCustomer(name, phoneNumber, address);
             System.out.println("Berhasil menyimpan data pelanggan");
             try {
                 index(createStage);
@@ -414,13 +519,17 @@ public class Pelanggan {
             }
         });
 
+
         contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
         contentFooterBox.getChildren().addAll(backButton, submitButton);
 
+
         contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
+
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
+
 
         Scene scene = new Scene(borderPane, 800, 600);
         createStage.setScene(scene);
@@ -429,37 +538,47 @@ public class Pelanggan {
         createStage.show();
     }
 
+
     public void edit(Stage editStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/editPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
+
         GridPane header = new GridPane();
         header.setMinHeight(80);
         header.getStyleClass().add("header");
+
 
         Label appName = new Label("AjungStore");
         appName.setTextFill(Color.RED);
         appName.getStyleClass().add("appName");
 
+
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
+
 
         // Set the first column to expand to take the remaining space
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
 
+
         header.setAlignment(Pos.CENTER);
+
 
         header.add(appName, 0, 0); // Add AjungStore to the first column, first row
         header.add(welcome, 1, 0); // Add Hai, Admin to the second column, first row
 
+
         borderPane.setTop(header);
+
 
         VBox sidebar = new VBox();
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
+
 
         // Buat item navigasi
         Barang barang = new Barang();
@@ -473,6 +592,7 @@ public class Pelanggan {
                 ex.printStackTrace();
             }
         });
+
 
         Button navBarang = new Button("Barang");
         navBarang.getStyleClass().add("navBarang");
@@ -493,30 +613,39 @@ public class Pelanggan {
             }
         });
 
+
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
         contentBox.setSpacing(30);
 
+
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
+
 
         Label contentHeaderTitle = new Label("Edit Pelanggan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
+
         Label contentHeaderDescription = new Label("Mengedit pelanggan di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
+
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
+
 
         VBox formBox = new VBox();
         formBox.getStyleClass().add("formBox");
         formBox.setSpacing(20);
 
+
         VBox primaryForm = new VBox();
         primaryForm.setSpacing(30);
         primaryForm.getStyleClass().add("primaryForm");
+
 
         HBox namaField = new HBox();
         namaField.setSpacing(60);
@@ -528,6 +657,7 @@ public class Pelanggan {
         HBox.setHgrow(namaInput, Priority.ALWAYS);
         namaField.getChildren().addAll(namaLabel, namaInput);
 
+
         HBox nomorTeleponField = new HBox();
         nomorTeleponField.setSpacing(60);
         nomorTeleponField.setAlignment(Pos.CENTER_LEFT);
@@ -537,6 +667,7 @@ public class Pelanggan {
         nomorTeleponInput.getStyleClass().add("nomorTeleponInput");
         HBox.setHgrow(nomorTeleponInput, Priority.ALWAYS);
         nomorTeleponField.getChildren().addAll(nomorTeleponLabel, nomorTeleponInput);
+
 
         HBox alamatField = new HBox();
         alamatField.setSpacing(60);
@@ -548,12 +679,16 @@ public class Pelanggan {
         HBox.setHgrow(alamatInput, Priority.ALWAYS);
         alamatField.getChildren().addAll(alamatLabel, alamatInput);
 
+
         primaryForm.getChildren().addAll(namaField, nomorTeleponField, alamatField);
+
 
         formBox.getChildren().addAll(primaryForm);
 
+
         HBox contentFooterBox = new HBox();
         contentFooterBox.setSpacing(20);
+
 
         Button backButton = new Button("Kembali");
         backButton.getStyleClass().add("backButton");
@@ -564,6 +699,7 @@ public class Pelanggan {
                 ex.printStackTrace();
             }
         });
+
 
         Button submitButton = new Button("Simpan");
         submitButton.getStyleClass().add("submitButton");
@@ -577,13 +713,17 @@ public class Pelanggan {
             }
         });
 
+
         contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
         contentFooterBox.getChildren().addAll(backButton, submitButton);
 
+
         contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
+
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
+
 
         Scene scene = new Scene(borderPane, 800, 600);
         editStage.setScene(scene);
@@ -592,3 +732,6 @@ public class Pelanggan {
         editStage.show();
     }
 }
+
+
+
