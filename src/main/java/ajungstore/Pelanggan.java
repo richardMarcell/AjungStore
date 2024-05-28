@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
-
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -35,34 +34,34 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class Pelanggan {
-    private void saveCustomer(String name, String phoneNumber, String address) {
-        try (Connection connection = Dbconnect.getConnect();
-             PreparedStatement statement = connection.prepareStatement(
-                     "INSERT INTO customers (name, phoneNumber, address) VALUES (?, ?, ?)")) {
-            statement.setString(1, name);
-            statement.setString(2, phoneNumber);
-            statement.setString(3, address);
-            statement.executeUpdate();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     private void deleteCustomerRecord(int customerId) {
         try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement deleteSalesStmt = connection.prepareStatement("DELETE FROM customers WHERE id = ?")) {
+                PreparedStatement deleteCustomersStmt = connection
+                        .prepareStatement("DELETE FROM customers WHERE id = ?")) {
 
             // Start a transaction
             connection.setAutoCommit(false);
-
             // Delete from sales_details first
-
             // Delete from sales
-            deleteSalesStmt.setInt(1, customerId);
-            deleteSalesStmt.executeUpdate();
+            deleteCustomersStmt.setInt(1, customerId);
+            deleteCustomersStmt.executeUpdate();
 
             // Commit the transaction
             connection.commit();
+
+            ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
+            try (PreparedStatement statement = connection.prepareStatement("SELECT name, phoneNumber FROM customers");
+                    ResultSet resultSet = statement.executeQuery()) {
+
+                int index = 1;
+                while (resultSet.next()) {
+                    ObservableList<String> row = FXCollections.observableArrayList();
+                    row.add(String.valueOf(index++));
+                    row.add(resultSet.getString("name"));
+                    row.add(resultSet.getString("phoneNumber"));
+                    data.add(row);
+                }
+            }
 
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -202,7 +201,7 @@ public class Pelanggan {
 
         // Ambil data dari database
         try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement statement = connection.prepareStatement("SELECT name, phoneNumber FROM customers");
+                PreparedStatement statement = connection.prepareStatement("SELECT id, name, phoneNumber FROM customers");
                 ResultSet resultSet = statement.executeQuery()) {
 
             int index = 1;
@@ -211,6 +210,7 @@ public class Pelanggan {
                 row.add(String.valueOf(index++));
                 row.add(resultSet.getString("name"));
                 row.add(resultSet.getString("phoneNumber"));
+                row.add(resultSet.getString("id"));
                 data.add(row);
             }
         } catch (SQLException ex) {
@@ -234,7 +234,7 @@ public class Pelanggan {
                 // Handle delete button action
                 deleteButton.setOnAction(event -> {
                     ObservableList<String> rowData = getTableView().getItems().get(getIndex());
-                    int id = Integer.parseInt(rowData.get(0)); // Assuming the ID is in the first column
+                    int id = Integer.parseInt(rowData.get(3)); // Assuming the ID is in the first column
 
                     // Show confirmation dialog
                     Alert alert = new Alert(AlertType.CONFIRMATION);
@@ -419,10 +419,6 @@ public class Pelanggan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            String name = namaInput.getText();
-            String phoneNumber = nomorTeleponInput.getText();
-            String address = alamatInput.getText();
-            saveCustomer(name, phoneNumber, address);
             System.out.println("Berhasil menyimpan data pelanggan");
             try {
                 index(createStage);

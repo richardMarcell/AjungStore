@@ -9,6 +9,35 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class CustomerService {
+
+  private String name;
+  private String phoneNumber;
+  private String address;
+
+  public void setName(String name){
+    this.name = name;
+  }
+
+  public void setPhoneNumber(String phoneNumber){
+    this.phoneNumber = phoneNumber;
+  }
+
+  public void setAddress(String address){
+    this.address = address;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getPhoneNumber() {
+    return phoneNumber;
+  }
+
+  public String getAddress() {
+    return address;
+  }
+
   public List<String> getAllCustomerNames() {
     List<String> customerNames = new ArrayList<>();
     try (Connection connection = Dbconnect.getConnect();
