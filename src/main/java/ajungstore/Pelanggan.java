@@ -34,19 +34,6 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class Pelanggan {
-    private void saveCustomer(CustomerService customerService) {
-        try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement statement = connection.prepareStatement(
-                        "INSERT INTO customers (name, phoneNumber, address) VALUES (?, ?, ?)")) {
-            statement.setString(1, customerService.getName());
-            statement.setString(2, customerService.getPhoneNumber());
-            statement.setString(3, customerService.getAddress());
-            statement.executeUpdate();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     private void deleteCustomerRecord(int customerId) {
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement deleteCustomersStmt = connection
@@ -432,12 +419,6 @@ public class Pelanggan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            CustomerService customerService = new CustomerService();
-            customerService.setName(namaInput.getText());
-            customerService.setPhoneNumber(nomorTeleponInput.getText());
-            customerService.setAddress(alamatInput.getText());
-
-            saveCustomer(customerService);
             System.out.println("Berhasil menyimpan data pelanggan");
             try {
                 index(createStage);
