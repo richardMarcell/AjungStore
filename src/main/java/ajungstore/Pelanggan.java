@@ -34,6 +34,19 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class Pelanggan {
+    private void saveCustomer(CustomerService customerService) {
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(
+                        "INSERT INTO customers (name, phoneNumber, address) VALUES (?, ?, ?)")) {
+            statement.setString(1, customerService.getName());
+            statement.setString(2, customerService.getPhoneNumber());
+            statement.setString(3, customerService.getAddress());
+            statement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     private void deleteCustomerRecord(int customerId) {
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement deleteCustomersStmt = connection
@@ -201,7 +214,8 @@ public class Pelanggan {
 
         // Ambil data dari database
         try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement statement = connection.prepareStatement("SELECT id, name, phoneNumber FROM customers");
+                PreparedStatement statement = connection
+                        .prepareStatement("SELECT id, name, phoneNumber FROM customers");
                 ResultSet resultSet = statement.executeQuery()) {
 
             int index = 1;
@@ -419,12 +433,31 @@ public class Pelanggan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            System.out.println("Berhasil menyimpan data pelanggan");
-            try {
-                index(createStage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            String nama = namaInput.getText();
+            String nomorTelepon = nomorTeleponInput.getText();
+            String alamat = alamatInput.getText();
+
+            if (nama.isEmpty() || nomorTelepon.isEmpty() || alamat.isEmpty()) {
+                Alert alert = new Alert(AlertType.WARNING);
+                alert.setTitle("Peringatan");
+                alert.setHeaderText(null);
+                alert.setContentText("Nama Pelanggan, Nomor telepon dan alamat tidak boleh kosong.");
+                alert.showAndWait();
+            } else {
+                CustomerService customerService = new CustomerService();
+                customerService.setName(namaInput.getText());
+                customerService.setPhoneNumber(nomorTeleponInput.getText());
+                customerService.setAddress(alamatInput.getText());
+
+                saveCustomer(customerService);
+                System.out.println("Berhasil menyimpan data pelanggan");
+                try {
+                    index(createStage);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
+
         });
 
         contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
