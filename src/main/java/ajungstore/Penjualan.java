@@ -91,22 +91,55 @@ public class Penjualan {
 
     }
 
+    public int editSales(SalesService salesService) {
+        String updateSalesSQL = "UPDATE sales SET customerId = ?, userId = ?, transactionDate = ?, status = ?, numberFactur = ?, totalQuantity = ?, totalSales = ?, totalPayment = ? WHERE id = ?";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement preparedStatement = connection.prepareStatement(updateSalesSQL)) {
+
+            preparedStatement.setInt(1, salesService.getCustomerId());
+            preparedStatement.setInt(2, salesService.getUserId());
+            preparedStatement.setDate(3, java.sql.Date.valueOf(salesService.getTransactionDate()));
+            preparedStatement.setString(4, salesService.getStatus());
+            preparedStatement.setString(5, salesService.getNumberFactur());
+            preparedStatement.setInt(6, salesService.getTotalQuantity());
+            preparedStatement.setDouble(7, salesService.getTotalSales());
+            preparedStatement.setDouble(8, salesService.getTotalPayment());
+            preparedStatement.setInt(9, salesService.getSaleId());
+
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows > 0) {
+                System.out.println("Rows updated: " + affectedRows);
+                return salesService.getSaleId(); // Return the updated sale ID
+            } else {
+                System.out.println("No rows updated.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error editing sales: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0; // Return 0 if no update or an error occurred
+    }
+
     public void storeSalesDetail(int salesId) {
         try (Connection connection = Dbconnect.getConnect()) {
-            String sql = "INSERT INTO sales_details (salesId, productId, price, quantity) VALUES (?, ?, ?, ?)";
-            PreparedStatement statement = connection.prepareStatement(sql);
+            String sqlDelete = "DELETE FROM sales_details WHERE salesId = ?";
+            String sqlStore = "INSERT INTO sales_details (salesId, productId, price, quantity) VALUES (?, ?, ?, ?)";
+            PreparedStatement statementDelete = connection.prepareStatement(sqlDelete);
+            statementDelete.setInt(1, salesId);
+            statementDelete.executeUpdate();
 
-            ProductService productService = new ProductService();
+            PreparedStatement statementStore = connection.prepareStatement(sqlStore);
             for (SalesDetailService detail : daftarDetailTransaksi) {
-                statement.setInt(1, salesId);
-                statement.setInt(2, detail.getProductId());
-                statement.setDouble(3, detail.getPrice());
-                statement.setInt(4, detail.getQuantity());
+                statementStore.setInt(1, salesId);
+                statementStore.setInt(2, detail.getProductId());
+                statementStore.setDouble(3, detail.getPrice());
+                statementStore.setInt(4, detail.getQuantity());
 
-                statement.addBatch();
+                statementStore.addBatch();
             }
 
-            statement.executeBatch();
+            statementStore.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -352,7 +385,9 @@ public class Penjualan {
             {
                 editButton.setOnAction(event -> {
                     try {
-                        edit(indexStage);
+                        ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                        int salesId = Integer.parseInt(rowData.get(4));
+                        edit(salesId, indexStage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -630,9 +665,7 @@ public class Penjualan {
                 salesService.setTotalQuantity(totalKuantitas);
                 salesService.setTotalSales(totalPenjualan);
 
-                Double totalPembayaran = totalPenjualan > Double.parseDouble(totalBayarInput.getText())
-                        ? Double.parseDouble(totalBayarInput.getText())
-                        : totalPenjualan;
+                Double totalPembayaran = Double.parseDouble(totalBayarInput.getText());
                 salesService.setTotalPayment(totalPembayaran);
 
                 int saleId = storeSales(salesService);
@@ -643,6 +676,7 @@ public class Penjualan {
 
                     totalKuantitas = 0;
                     totalPenjualan = 0.0;
+                    daftarDetailTransaksi = new ArrayList<>();
                     index(createStage);
                 } else {
                     System.out.println("Gagal menambah data penjualan");
@@ -668,7 +702,33 @@ public class Penjualan {
         createStage.show();
     }
 
-    public void edit(Stage editStage) throws Exception {
+    public void edit(int salesId, Stage editStage) throws Exception {
+        SalesService salesService = new SalesService();
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT id, numberFactur, transactionDate, customerId, status, totalSales, totalPayment from sales WHERE id = ?")) {
+
+            statement.setInt(1, salesId);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
+                String customerId = resultSet.getString("customerId");
+                String numberFactur = resultSet.getString("numberFactur");
+                double totalSales = resultSet.getDouble("totalSales");
+                double totalPayment = resultSet.getDouble("totalPayment");
+
+                salesService.setTransactionDate(transactionDate);
+                salesService.setCustomerId(Integer.valueOf(customerId));
+                salesService.setNumberFactur(numberFactur);
+                salesService.setTotalSales(totalSales);
+                salesService.setTotalPayment(totalPayment);
+
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/editPenjualan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
@@ -741,10 +801,10 @@ public class Penjualan {
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
 
-        Label contentHeaderTitle = new Label("Edit Penjualan");
+        Label contentHeaderTitle = new Label("Tambah Penjualan");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-        Label contentHeaderDescription = new Label("Mengedit penjualan yang terjadi di Toko Ajung");
+        Label contentHeaderDescription = new Label("Menambah penjualan yang terjadi di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
@@ -763,6 +823,7 @@ public class Penjualan {
         Label nomorFakturLabel = new Label("No Faktur");
         nomorFakturLabel.getStyleClass().add("nomorFakturLabel");
         TextField nomorFakturInput = new TextField();
+        nomorFakturInput.setText(salesService.getNumberFactur());
         nomorFakturInput.getStyleClass().add("nomorFakturInput");
         HBox.setHgrow(nomorFakturInput, Priority.ALWAYS);
         nomorFakturField.getChildren().addAll(nomorFakturLabel, nomorFakturInput);
@@ -774,7 +835,10 @@ public class Penjualan {
         namaPelangganLabel.getStyleClass().add("namaPelangganLabel");
         namaPelangganLabel.setMinWidth(Region.USE_PREF_SIZE); // Menentukan lebar minimum agar tidak terpotong
         ComboBox<String> namaPelangganInput = new ComboBox<>();
-        namaPelangganInput.getItems().addAll("Andi", "Budi", "Budiman Andi");
+        CustomerService customerService = new CustomerService();
+        List<String> customerNames = customerService.getAllCustomerNames();
+        namaPelangganInput.getItems().addAll(customerNames);
+        namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()));
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -788,6 +852,7 @@ public class Penjualan {
         tanggalLabel.getStyleClass().add("tanggalLabel");
         tanggalLabel.setMinWidth(Region.USE_PREF_SIZE);
         DatePicker tanggalInput = new DatePicker();
+        tanggalInput.setValue(salesService.getTransactionDate());
         tanggalInput.getStyleClass().add("tanggalInput");
         HBox.setHgrow(tanggalInput, Priority.ALWAYS);
         tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari
@@ -810,15 +875,9 @@ public class Penjualan {
         secondaryFormGrid.setHgap(10);
         secondaryFormGrid.setVgap(10);
 
-        // // Set up the initial rows for the secondary form
-        // addSecondaryFormField(secondaryFormGrid, 0);
-
-        // Button tambahDetailTransaksiButton = new Button("Tambah Barang");
-        // tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
-        // tambahDetailTransaksiButton.setTextFill(Color.WHITE);
-        // tambahDetailTransaksiButton
-        // .setOnAction(e -> addSecondaryFormField(secondaryFormGrid,
-        // secondaryFormGrid.getRowCount()));
+        Button tambahDetailTransaksiButton = new Button("Tambah Barang");
+        tambahDetailTransaksiButton.getStyleClass().add("tambahDetailTransaksiButton");
+        tambahDetailTransaksiButton.setTextFill(Color.WHITE);
 
         HBox totalField = new HBox();
         totalField.setSpacing(100);
@@ -826,9 +885,34 @@ public class Penjualan {
         Label totalLabel = new Label("Total");
         totalLabel.getStyleClass().add("totalLabel");
         TextField totalInput = new TextField();
+        totalPenjualan = salesService.getTotalSales();
+        totalInput.setEditable(false);
         totalInput.getStyleClass().add("totalInput");
-        // HBox.setHgrow(totalInput, Priority.ALWAYS);
+        totalInput.setText(currencyFormat.format(totalPenjualan));
         totalField.getChildren().addAll(totalLabel, totalInput);
+
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement detailStatement = connection.prepareStatement(
+                        "SELECT productId, price, quantity from sales_details where salesId = ?")) {
+
+            detailStatement.setInt(1, salesId);
+            ResultSet detailResultSet = detailStatement.executeQuery();
+
+            int rowIndex = 0;
+            while (detailResultSet.next()) {
+                int productId = detailResultSet.getInt("productId");
+                double price = detailResultSet.getDouble("price");
+                int quantity = detailResultSet.getInt("quantity");
+                addSecondaryFormFieldOnEditPage(secondaryFormGrid, rowIndex,
+                        total -> totalInput.setText(currencyFormat.format(total)), productId, price, quantity);
+                rowIndex++;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        tambahDetailTransaksiButton.setOnAction(e -> addSecondaryFormFieldOnEditPage(secondaryFormGrid,
+                secondaryFormGrid.getRowCount(), total -> totalInput.setText(currencyFormat.format(total)), 0, 0.0, 0));
 
         HBox totalBayarField = new HBox();
         totalBayarField.setSpacing(60);
@@ -836,13 +920,13 @@ public class Penjualan {
         Label totalBayarLabel = new Label("Total Bayar");
         totalBayarLabel.getStyleClass().add("totalBayarLabel");
         TextField totalBayarInput = new TextField();
+        totalBayarInput.setText(String.valueOf(salesService.getTotalPayment()));
         totalBayarInput.getStyleClass().add("totalBayarInput");
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
-        // secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid,
-        // tambahDetailTransaksiButton,
-        // totalField, totalBayarField);
+        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
+                totalField, totalBayarField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -853,6 +937,7 @@ public class Penjualan {
         backButton.getStyleClass().add("backButton");
         backButton.setOnAction(e -> {
             try {
+                totalPenjualan = 0.0;
                 index(editStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -863,13 +948,63 @@ public class Penjualan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+            if (nomorFakturInput.getText().isEmpty()) {
+                showAlert("Nomor Faktur harus diisi");
+                return;
+            }
+
+            if (namaPelangganInput.getValue() == null || namaPelangganInput.getValue().isEmpty()) {
+                showAlert("Nama Pelanggan harus dipilih");
+                return;
+            }
+
+            if (tanggalInput.getValue() == null) {
+                showAlert("Tanggal harus diisi");
+                return;
+            }
+
+            if (totalBayarInput.getText().isEmpty() || Double.parseDouble(totalBayarInput.getText()) < 0) {
+                showAlert("Total Bayar harus diisi dan lebih besar atau sama dengan 0");
+                return;
+            }
             System.out.println("Berhasil menyimpan data barang");
             try {
-                index(editStage);
+                salesService.setIdSale(salesId);
+                salesService.setCustomerId(customerService.getCustomerIdByName(namaPelangganInput.getValue()));
+                salesService.setUserId(1); // Asumsikan userId 1 untuk Admin, bisa diubah sesuai konteks
+                salesService.setTransactionDate(tanggalInput.getValue());
+
+                String status = totalPenjualan > Double.parseDouble(totalBayarInput.getText()) ? "BELUM_LUNAS"
+                        : "LUNAS";
+                salesService.setStatus(status); // Atur status default
+                salesService.setNumberFactur(nomorFakturInput.getText());
+                salesService.setTotalQuantity(totalKuantitas);
+                salesService.setTotalSales(totalPenjualan);
+
+                Double totalPembayaran = totalPenjualan > Double.parseDouble(totalBayarInput.getText())
+                        ? Double.parseDouble(totalBayarInput.getText())
+                        : totalPenjualan;
+                salesService.setTotalPayment(totalPembayaran);
+
+                int saleId = editSales(salesService);
+
+                if (saleId > 0) {
+                    storeSalesDetail(saleId);
+
+                    totalKuantitas = 0;
+                    totalPenjualan = 0.0;
+                    daftarDetailTransaksi = new ArrayList<>();
+                    index(editStage);
+                } else {
+                    System.out.println("Gagal menambah data penjualan");
+                }
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
+        totalPenjualan = salesService.getTotalSales();
+        totalInput.setText(currencyFormat.format(totalPenjualan));
 
         contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
         contentFooterBox.getChildren().addAll(backButton, submitButton);
@@ -962,20 +1097,31 @@ public class Penjualan {
                     double hargaSatuan = currencyFormat.parse(hargaSatuanInput.getText()).doubleValue();
                     double subtotal = kuantitas * hargaSatuan;
 
-                    SalesDetailService detail = new SalesDetailService();
-                    detail.setProductId(productService.getProductIdByName(namaBarangInput.getValue()));
-                    detail.setPrice(hargaSatuan);
-                    detail.setQuantity(kuantitas);
+                    // Cari detail transaksi yang sudah ada untuk produk yang sama
+                    Optional<SalesDetailService> existingDetail = daftarDetailTransaksi.stream()
+                            .filter(detail -> detail.getProductId() == productService
+                                    .getProductIdByName(namaBarangInput.getValue()))
+                            .findFirst();
 
-                    daftarDetailTransaksi.add(detail);
-
-                    // Hitung perbedaan subtotal dari kuantitas yang sebelumnya
-                    double oldSubtotal = oldValue.isEmpty() ? 0.0 : Integer.parseInt(oldValue) * hargaSatuan;
-                    double diff = subtotal - oldSubtotal;
-
-                    // Kurangi atau tambahkan ke total penjualan
-                    totalPenjualan += diff;
-                    totalKuantitas += kuantitas;
+                    if (existingDetail.isPresent()) {
+                        // Update kuantitas dan subtotal dari detail transaksi yang sudah ada
+                        SalesDetailService detail = existingDetail.get();
+                        double oldSubtotal = detail.getQuantity() * hargaSatuan;
+                        detail.setQuantity(kuantitas);
+                        detail.setPrice(hargaSatuan);
+                        double diff = subtotal - oldSubtotal;
+                        totalPenjualan += diff;
+                        totalKuantitas += kuantitas;
+                    } else {
+                        // Tambahkan detail transaksi baru ke daftarDetailTransaksi
+                        SalesDetailService detail = new SalesDetailService();
+                        detail.setProductId(productService.getProductIdByName(namaBarangInput.getValue()));
+                        detail.setPrice(hargaSatuan);
+                        detail.setQuantity(kuantitas);
+                        daftarDetailTransaksi.add(detail);
+                        totalPenjualan += subtotal;
+                        totalKuantitas += kuantitas;
+                    }
 
                     subtotalInput.setText(currencyFormat.format(subtotal));
                     totalUpdater.accept(totalPenjualan);
@@ -995,10 +1141,179 @@ public class Penjualan {
         hapusDetailButton.setAlignment(Pos.CENTER);
         hapusDetailButtonField.getChildren().addAll(hapusDetailButtonEmptyLabel, hapusDetailButton);
         hapusDetailButton.setOnAction(e -> {
+            // Cari detail transaksi yang sesuai untuk produk yang akan dihapus
+            int productIdToDelete = productService.getProductIdByName(namaBarangInput.getValue());
+            Optional<SalesDetailService> detailToDelete = daftarDetailTransaksi.stream()
+                    .filter(detail -> detail.getProductId() == productIdToDelete)
+                    .findFirst();
+
+            if (detailToDelete.isPresent()) {
+                // Hapus detail transaksi dari daftarDetailTransaksi
+                SalesDetailService detail = detailToDelete.get();
+                double subtotalToDelete = detail.getQuantity() * detail.getPrice();
+                totalPenjualan -= subtotalToDelete;
+                totalKuantitas -= detail.getQuantity();
+                daftarDetailTransaksi.remove(detail);
+                totalUpdater.accept(totalPenjualan); // Update nilai totalPenjualan di form utama
+            }
+
             // Remove the row from the grid
             grid.getChildren().removeAll(namaBarangField, hargaSatuanField, kuantitasField, subtotalField,
                     hapusDetailButtonField);
         });
+
+        grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
+    }
+
+    private void addSecondaryFormFieldOnEditPage(GridPane grid, int rowIndex, Consumer<Double> totalUpdater,
+            int productId, double price, int quantity) {
+
+        ProductService productService = new ProductService();
+        VBox namaBarangField = new VBox();
+        namaBarangField.setSpacing(10);
+        Label namaBarangLabel = new Label("Nama Barang");
+        namaBarangLabel.getStyleClass().add("namaBarangLabel");
+        ComboBox<String> namaBarangInput = new ComboBox<>();
+        namaBarangInput.setMinWidth(600);
+        namaBarangInput.setMinHeight(20);
+        List<String> productNames = productService.getAllProductName();
+        namaBarangInput.getItems().addAll(productNames);
+        namaBarangInput.getStyleClass().add("namaBarangInput");
+        namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
+
+        VBox hargaSatuanField = new VBox();
+        hargaSatuanField.setSpacing(10);
+        Label hargaSatuanLabel = new Label("Harga Satuan");
+        hargaSatuanLabel.getStyleClass().add("hargaSatuanLabel");
+        TextField hargaSatuanInput = new TextField();
+        hargaSatuanInput.setMinWidth(200);
+        hargaSatuanInput.setMinHeight(20);
+        hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
+        hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
+        hargaSatuanInput.setEditable(false); // Menonaktifkan input
+
+        // Tambahkan listener ke ComboBox untuk mengupdate harga satuan
+        namaBarangInput.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                hargaSatuanInput.setText(currencyFormat.format(productService.getProductPrice(newValue)));
+            }
+        });
+
+        VBox kuantitasField = new VBox();
+        kuantitasField.setSpacing(10);
+        Label kuantitasLabel = new Label("Kuantitas");
+        kuantitasLabel.getStyleClass().add("kuantitasLabel");
+        TextField kuantitasInput = new TextField();
+        kuantitasInput.setMinWidth(100);
+        kuantitasInput.setMinHeight(20);
+        kuantitasInput.getStyleClass().add("kuantitasInput");
+
+        // UnaryOperator untuk memfilter input agar hanya angka yang diterima
+        UnaryOperator<TextFormatter.Change> filter = change -> {
+            String newText = change.getControlNewText();
+            if (newText.matches("\\d*")) {
+                return change;
+            }
+            return null;
+        };
+
+        // Membuat TextFormatter dengan IntegerStringConverter untuk mengonversi ke
+        // Integer
+        TextFormatter<Integer> textFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, filter);
+        kuantitasInput.setTextFormatter(textFormatter);
+
+        kuantitasField.getChildren().addAll(kuantitasLabel, kuantitasInput);
+
+        VBox subtotalField = new VBox();
+        subtotalField.setSpacing(10);
+        Label subtotalLabel = new Label("Subtotal");
+        subtotalLabel.getStyleClass().add("subtotalLabel");
+        TextField subtotalInput = new TextField();
+        subtotalInput.setMinWidth(150);
+        subtotalInput.setMinHeight(20);
+        subtotalInput.setEditable(false);
+        subtotalInput.getStyleClass().add("subtotalInput");
+        subtotalField.getChildren().addAll(subtotalLabel, subtotalInput);
+
+        // Tambahkan listener ke TextField kuantitasInput
+        kuantitasInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    int kuantitas = Integer.parseInt(newValue);
+                    double hargaSatuan = currencyFormat.parse(hargaSatuanInput.getText()).doubleValue();
+                    double subtotal = kuantitas * hargaSatuan;
+
+                    // Cari detail transaksi yang sudah ada untuk produk yang sama
+                    Optional<SalesDetailService> existingDetail = daftarDetailTransaksi.stream()
+                            .filter(detail -> detail.getProductId() == productService
+                                    .getProductIdByName(namaBarangInput.getValue()))
+                            .findFirst();
+
+                    if (existingDetail.isPresent()) {
+                        // Update kuantitas dan subtotal dari detail transaksi yang sudah ada
+                        SalesDetailService detail = existingDetail.get();
+                        double oldSubtotal = detail.getQuantity() * hargaSatuan;
+                        detail.setQuantity(kuantitas);
+                        detail.setPrice(hargaSatuan);
+                        double diff = subtotal - oldSubtotal;
+                        totalPenjualan += diff;
+                        totalKuantitas += kuantitas;
+                    } else {
+                        // Tambahkan detail transaksi baru ke daftarDetailTransaksi
+                        SalesDetailService detail = new SalesDetailService();
+                        detail.setProductId(productService.getProductIdByName(namaBarangInput.getValue()));
+                        detail.setPrice(hargaSatuan);
+                        detail.setQuantity(kuantitas);
+                        daftarDetailTransaksi.add(detail);
+                        totalPenjualan += subtotal;
+                        totalKuantitas += kuantitas;
+                    }
+
+                    subtotalInput.setText(currencyFormat.format(subtotal));
+                    totalUpdater.accept(totalPenjualan);
+                } catch (ParseException e) {
+                    subtotalInput.setText("0,00");
+                }
+            } else {
+                subtotalInput.setText("");
+            }
+        });
+
+        VBox hapusDetailButtonField = new VBox();
+        hapusDetailButtonField.setSpacing(10);
+        Label hapusDetailButtonEmptyLabel = new Label(" ");
+        Button hapusDetailButton = new Button("-");
+        hapusDetailButton.getStyleClass().add("hapusDetailButton");
+        hapusDetailButton.setAlignment(Pos.CENTER);
+        hapusDetailButtonField.getChildren().addAll(hapusDetailButtonEmptyLabel, hapusDetailButton);
+        hapusDetailButton.setOnAction(e -> {
+            // Cari detail transaksi yang sesuai untuk produk yang akan dihapus
+            int productIdToDelete = productService.getProductIdByName(namaBarangInput.getValue());
+            Optional<SalesDetailService> detailToDelete = daftarDetailTransaksi.stream()
+                    .filter(detail -> detail.getProductId() == productIdToDelete)
+                    .findFirst();
+
+            if (detailToDelete.isPresent()) {
+                // Hapus detail transaksi dari daftarDetailTransaksi
+                SalesDetailService detail = detailToDelete.get();
+                double subtotalToDelete = detail.getQuantity() * detail.getPrice();
+                totalPenjualan -= subtotalToDelete;
+                totalKuantitas -= detail.getQuantity();
+                daftarDetailTransaksi.remove(detail);
+                totalUpdater.accept(totalPenjualan); // Update nilai totalPenjualan di form utama
+            }
+
+            // Remove the row from the grid
+            grid.getChildren().removeAll(namaBarangField, hargaSatuanField, kuantitasField, subtotalField,
+                    hapusDetailButtonField);
+        });
+
+        if (productId != 0 && price != 0.0 && quantity != 0) {
+            namaBarangInput.setValue(productService.getProductNameById(productId));
+            hargaSatuanInput.setText(currencyFormat.format(price));
+            kuantitasInput.setText(String.valueOf(quantity));
+            subtotalInput.setText(currencyFormat.format(quantity * price));
+        }
 
         grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
     }

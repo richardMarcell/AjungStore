@@ -3,6 +3,7 @@ package ajungstore;
 import java.time.LocalDate;
 
 public class SalesService {
+  protected int idSale;
   protected int customerId;
   protected int userId;
   protected LocalDate transactionDate;
@@ -11,6 +12,14 @@ public class SalesService {
   protected int totalQuantity;
   protected double totalSales;
   protected double totalPayment;
+
+  public void setIdSale(int id) {
+    idSale = id;
+  }
+
+  public int getSaleId() {
+    return idSale;
+  }
 
   public void setCustomerId(int id) {
     customerId = id;
