@@ -1,5 +1,9 @@
 package ajungstore;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 public class SalesService {
@@ -83,6 +87,37 @@ public class SalesService {
 
   public double getTotalPayment() {
     return totalPayment;
+  }
+
+  public String getNewNumberFactur() {
+    String sql = "SELECT numberFactur FROM sales ORDER BY createdAt DESC LIMIT 1";
+    try (Connection connection = Dbconnect.getConnect();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        ResultSet resultSet = preparedStatement.executeQuery()) {
+
+      if (resultSet.next()) {
+        String lastNumberFactur = resultSet.getString("numberFactur");
+        return generateNextNumberFactur(lastNumberFactur);
+      } else {
+        // Default value if there are no transactions
+        return "AJUNG001";
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return "";
+  }
+
+  private String generateNextNumberFactur(String lastNumberFactur) {
+    // Extract the numeric part from the last number factur
+    String numericPart = lastNumberFactur.replaceAll("\\D+", "");
+    int number = Integer.parseInt(numericPart);
+
+    // Increment the number
+    number++;
+
+    // Format the new number factur
+    return String.format("AJUNG%03d", number);
   }
 
 }

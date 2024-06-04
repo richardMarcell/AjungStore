@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -30,6 +31,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -58,6 +60,15 @@ public class Penjualan {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public static String convertToInteger(String value) {
+        // Hapus karakter non-digit dari string
+        String cleanedValue = value.replaceAll("[^\\d]", "");
+
+        // Konversi string menjadi integer
+        String result = cleanedValue;
+        return result;
     }
 
     public int storeSales(SalesService salesService) {
@@ -438,6 +449,7 @@ public class Penjualan {
     }
 
     public void create(Stage createStage) throws Exception {
+        SalesService salesService = new SalesService();
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/createPenjualan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
@@ -532,6 +544,8 @@ public class Penjualan {
         Label nomorFakturLabel = new Label("No Faktur");
         nomorFakturLabel.getStyleClass().add("nomorFakturLabel");
         TextField nomorFakturInput = new TextField();
+        nomorFakturInput.setDisable(true);
+        nomorFakturInput.setText(salesService.getNewNumberFactur());
         nomorFakturInput.getStyleClass().add("nomorFakturInput");
         HBox.setHgrow(nomorFakturInput, Priority.ALWAYS);
         nomorFakturField.getChildren().addAll(nomorFakturLabel, nomorFakturInput);
@@ -608,6 +622,26 @@ public class Penjualan {
         TextField totalBayarInput = new TextField();
         totalBayarInput.getStyleClass().add("totalBayarInput");
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    // Hapus semua karakter non-digit sebelum parsing
+                    String cleanString = newValue.replaceAll("[^\\d]", "");
+                    // Parsing string menjadi angka
+                    long parsed = Long.parseLong(cleanString);
+                    // Format angka menjadi format mata uang
+                    NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                    formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                    String formatted = formatter.format(parsed);
+                    // Set nilai yang terformat ke dalam text field
+                    totalBayarInput.setText(formatted);
+                    // Pindahkan kursor ke akhir teks
+                    totalBayarInput.end();
+                } catch (NumberFormatException e) {
+                    totalBayarInput.setText(oldValue); // Kembalikan ke nilai lama jika parsing gagal
+                }
+            }
+        });
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
         secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
@@ -647,25 +681,26 @@ public class Penjualan {
                 return;
             }
 
-            if (totalBayarInput.getText().isEmpty() || Double.parseDouble(totalBayarInput.getText()) < 0) {
+            if (totalBayarInput.getText().isEmpty()
+                    || Double.parseDouble(convertToInteger(totalBayarInput.getText())) < 0) {
                 showAlert("Total Bayar harus diisi dan lebih besar atau sama dengan 0");
                 return;
             }
             System.out.println("Berhasil menyimpan data barang");
             try {
-                SalesService salesService = new SalesService();
                 salesService.setCustomerId(customerService.getCustomerIdByName(namaPelangganInput.getValue()));
                 salesService.setUserId(1); // Asumsikan userId 1 untuk Admin, bisa diubah sesuai konteks
                 salesService.setTransactionDate(tanggalInput.getValue());
 
-                String status = totalPenjualan > Double.parseDouble(totalBayarInput.getText()) ? "BELUM_LUNAS"
+                String status = totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText()))
+                        ? "BELUM_LUNAS"
                         : "LUNAS";
                 salesService.setStatus(status); // Atur status default
                 salesService.setNumberFactur(nomorFakturInput.getText());
                 salesService.setTotalQuantity(totalKuantitas);
                 salesService.setTotalSales(totalPenjualan);
 
-                Double totalPembayaran = Double.parseDouble(totalBayarInput.getText());
+                Double totalPembayaran = Double.parseDouble(convertToInteger(totalBayarInput.getText()));
                 salesService.setTotalPayment(totalPembayaran);
 
                 int saleId = storeSales(salesService);
@@ -693,9 +728,13 @@ public class Penjualan {
         contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
 
         borderPane.setLeft(sidebar);
+        borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
 
-        Scene scene = new Scene(borderPane, 800, 600);
+        ScrollPane scrollPane = new ScrollPane(borderPane); // Tambahkan ScrollPane di sini
+        scrollPane.setFitToWidth(true);
+
+        Scene scene = new Scene(scrollPane, 800, 600);
         createStage.setScene(scene);
         createStage.setFullScreen(true);
         createStage.setTitle("AjungStore - Create Penjualan");
@@ -823,6 +862,7 @@ public class Penjualan {
         Label nomorFakturLabel = new Label("No Faktur");
         nomorFakturLabel.getStyleClass().add("nomorFakturLabel");
         TextField nomorFakturInput = new TextField();
+        nomorFakturInput.setDisable(true);
         nomorFakturInput.setText(salesService.getNumberFactur());
         nomorFakturInput.getStyleClass().add("nomorFakturInput");
         HBox.setHgrow(nomorFakturInput, Priority.ALWAYS);
@@ -920,8 +960,28 @@ public class Penjualan {
         Label totalBayarLabel = new Label("Total Bayar");
         totalBayarLabel.getStyleClass().add("totalBayarLabel");
         TextField totalBayarInput = new TextField();
-        totalBayarInput.setText(String.valueOf(salesService.getTotalPayment()));
+        totalBayarInput.setText(currencyFormat.format(salesService.getTotalPayment()));
         totalBayarInput.getStyleClass().add("totalBayarInput");
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    // Hapus semua karakter non-digit sebelum parsing
+                    String cleanString = newValue.replaceAll("[^\\d]", "");
+                    // Parsing string menjadi angka
+                    long parsed = Long.parseLong(cleanString);
+                    // Format angka menjadi format mata uang
+                    NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                    formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                    String formatted = formatter.format(parsed);
+                    // Set nilai yang terformat ke dalam text field
+                    totalBayarInput.setText(formatted);
+                    // Pindahkan kursor ke akhir teks
+                    totalBayarInput.end();
+                } catch (NumberFormatException e) {
+                    totalBayarInput.setText(oldValue); // Kembalikan ke nilai lama jika parsing gagal
+                }
+            }
+        });
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
@@ -963,7 +1023,8 @@ public class Penjualan {
                 return;
             }
 
-            if (totalBayarInput.getText().isEmpty() || Double.parseDouble(totalBayarInput.getText()) < 0) {
+            if (totalBayarInput.getText().isEmpty()
+                    || Double.parseDouble(convertToInteger(totalBayarInput.getText())) < 0) {
                 showAlert("Total Bayar harus diisi dan lebih besar atau sama dengan 0");
                 return;
             }
@@ -974,16 +1035,18 @@ public class Penjualan {
                 salesService.setUserId(1); // Asumsikan userId 1 untuk Admin, bisa diubah sesuai konteks
                 salesService.setTransactionDate(tanggalInput.getValue());
 
-                String status = totalPenjualan > Double.parseDouble(totalBayarInput.getText()) ? "BELUM_LUNAS"
+                String status = totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText()))
+                        ? "BELUM_LUNAS"
                         : "LUNAS";
                 salesService.setStatus(status); // Atur status default
                 salesService.setNumberFactur(nomorFakturInput.getText());
                 salesService.setTotalQuantity(totalKuantitas);
                 salesService.setTotalSales(totalPenjualan);
 
-                Double totalPembayaran = totalPenjualan > Double.parseDouble(totalBayarInput.getText())
-                        ? Double.parseDouble(totalBayarInput.getText())
-                        : totalPenjualan;
+                Double totalPembayaran = totalPenjualan > Double
+                        .parseDouble(convertToInteger(totalBayarInput.getText()))
+                                ? Double.parseDouble(convertToInteger(totalBayarInput.getText()))
+                                : totalPenjualan;
                 salesService.setTotalPayment(totalPembayaran);
 
                 int saleId = editSales(salesService);
@@ -1013,8 +1076,10 @@ public class Penjualan {
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
+        ScrollPane scrollPane = new ScrollPane(borderPane); // Tambahkan ScrollPane di sini
+        scrollPane.setFitToWidth(true);
 
-        Scene scene = new Scene(borderPane, 800, 600);
+        Scene scene = new Scene(scrollPane, 800, 600);
         editStage.setScene(scene);
         editStage.setFullScreen(true);
         editStage.setTitle("AjungStore - Edit Penjualan");
