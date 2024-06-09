@@ -2,12 +2,13 @@ package ajungstore;
 
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.text.NumberFormat;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -37,6 +38,7 @@ import javafx.stage.Stage;
 
 
 public class Barang {
+    NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
 
     private void refreshTableData(TableView<ObservableList<String>> table) {
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
@@ -62,6 +64,7 @@ public class Barang {
     }
 
     private void saveData(String name, String price) {
+
         String query = "INSERT INTO products(name, price) VALUES (?, ?)";
         try (Connection connection = Dbconnect.getConnect();
              PreparedStatement statement = connection.prepareStatement(query)) {
@@ -100,6 +103,58 @@ public class Barang {
         }
     }
 
+    // edit Data
+    private ObservableList<String> getDataById(String id) {
+        ObservableList<String> row = FXCollections.observableArrayList();
+        String query = "SELECT * FROM products WHERE id = ?";
+
+        try (Connection connection = Dbconnect.getConnect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, id);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                row.add(resultSet.getString("name"));
+                row.add(resultSet.getString("price"));
+                row.add(resultSet.getString("id"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return row;
+    }
+
+    private void updateData (String id, String name, String price) {
+        
+
+        String query = "UPDATE products SET name = ?, price = ? where id = ? ";
+
+        try (Connection connection = Dbconnect.getConnect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, name);
+            statement.setString(2, price);
+            statement.setString(3, id);
+            int rowsUpdated = statement.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                System.out.println("Data berhasil diperbarui.");
+            } else {
+                System.out.println("Gagal memperbarui data.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String convertToInteger(String value) {
+        // Hapus karakter non-digit dari string
+        String cleanedValue = value.replaceAll("[^\\d]", "");
+
+        // Konversi string menjadi integer
+        String result = cleanedValue;
+        
+        return result;}
 
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
@@ -256,7 +311,7 @@ public class Barang {
                 ObservableList<String> row = FXCollections.observableArrayList();
                 row.add(String.valueOf(no++));
                 row.add(resultSet.getString("name"));
-                row.add(resultSet.getString("price"));
+                row.add(formatter.format(Double.valueOf(resultSet.getString("price"))));
                 row.add(resultSet.getString("id"));
                 data.add(row);
             }
@@ -264,16 +319,21 @@ public class Barang {
             e.printStackTrace();
         }
 
+        table.setItems(data);
 
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
             final Button editButton = new Button("Edit");
             final Button deleteButton = new Button("Hapus");
+            final HBox actionButtons = new HBox(editButton, deleteButton);
        
             {
                 // Handle edit button action
+                actionButtons.setSpacing(10);
                 editButton.setOnAction(event -> {
+                    ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                    String id = rowData.get(3);
                     try {
-                        edit(indexStage);
+                        edit(indexStage, id);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -437,6 +497,27 @@ public class Barang {
         hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
         HBox.setHgrow(hargaSatuanInput, Priority.ALWAYS);
         hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
+
+        hargaSatuanInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    // Hapus semua karakter non-digit sebelum parsing
+                    String cleanString = newValue.replaceAll("[^\\d]", "");
+                    // Parsing string menjadi angka
+                    long parsed = Long.parseLong(cleanString);
+                    // Format angka menjadi format mata uang
+                    NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                    formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                    String formatted = formatter.format(parsed);
+                    // Set nilai yang terformat ke dalam text field
+                    hargaSatuanInput.setText(formatted);
+                    // Pindahkan kursor ke akhir teks
+                    hargaSatuanInput.end();
+                } catch (NumberFormatException e) {
+                    hargaSatuanInput.setText(oldValue); // Kembalikan ke nilai lama jika parsing gagal
+                }
+            }
+        });
    
         primaryForm.getChildren().addAll(namaBarangField, hargaSatuanField);
    
@@ -469,7 +550,8 @@ public class Barang {
                 alert.setContentText("Nama Barang dan Harga Satuan tidak boleh kosong.");
                 alert.showAndWait();
             } else {
-                saveData(namaBarang, hargaSatuan);
+                String HargaSatuan = convertToInteger(hargaSatuan);
+                saveData(namaBarang, HargaSatuan);
                 try {
                     index(createStage);
                 } catch (Exception ex) {
@@ -491,9 +573,12 @@ public class Barang {
         createStage.setFullScreen(true);
         createStage.setTitle("AjungStore - Create Barang");
         createStage.show();
+
     }
    
-    public void edit(Stage editStage) throws Exception {
+    public void edit(Stage editStage, String id) throws Exception {
+        ObservableList<String> data = getDataById(id);
+
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/createBarang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
@@ -606,7 +691,7 @@ public class Barang {
         namaBarangField.setAlignment(Pos.CENTER_LEFT);
         Label namaBarangLabel = new Label("Nama Barang");
         namaBarangLabel.getStyleClass().add("namaBarangLabel");
-        TextField namaBarangInput = new TextField();
+        TextField namaBarangInput = new TextField(data.get(0));
         namaBarangInput.getStyleClass().add("namaBarangInput");
         HBox.setHgrow(namaBarangInput, Priority.ALWAYS);
         namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
@@ -617,11 +702,31 @@ public class Barang {
         hargaSatuanField.setAlignment(Pos.CENTER_LEFT);
         Label hargaSatuanLabel = new Label("Harga Satuan");
         hargaSatuanLabel.getStyleClass().add("hargaSatuanLabel");
-        TextField hargaSatuanInput = new TextField();
+        TextField hargaSatuanInput = new TextField(formatter.format(Double.valueOf(data.get(1))));
         hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
         HBox.setHgrow(hargaSatuanInput, Priority.ALWAYS);
         hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
 
+        hargaSatuanInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    // Hapus semua karakter non-digit sebelum parsing
+                    String cleanString = newValue.replaceAll("[^\\d]", "");
+                    // Parsing string menjadi angka
+                    long parsed = Long.parseLong(cleanString);
+                    // Format angka menjadi format mata uang
+                    NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                    formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                    String formatted = formatter.format(parsed);
+                    // Set nilai yang terformat ke dalam text field
+                    hargaSatuanInput.setText(formatted);
+                    // Pindahkan kursor ke akhir teks
+                    hargaSatuanInput.end();
+                } catch (NumberFormatException e) {
+                    hargaSatuanInput.setText(oldValue); // Kembalikan ke nilai lama jika parsing gagal
+                }
+            }
+        });
 
         primaryForm.getChildren().addAll(namaBarangField, hargaSatuanField);
 
@@ -648,12 +753,25 @@ public class Barang {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            System.out.println("Berhasil menyimpan data barang");
+            String namaBarang = namaBarangInput.getText();
+            String harga = hargaSatuanInput.getText();
+            updateData(id, namaBarang, harga);
+            if (namaBarang.isEmpty() || harga.isEmpty()) {
+                Alert alert = new Alert(AlertType.WARNING);
+                alert.setTitle("Peringatan");
+                alert.setHeaderText(null);
+                alert.setContentText("Nama Barang atau Harga Satuan tidak boleh kosong.");
+                alert.showAndWait();
+            } else {
+                String HargaSatuan = convertToInteger(harga);
+                updateData(id, namaBarang, HargaSatuan);
+
             try {
                 index(editStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        }
         });
 
 
@@ -673,7 +791,5 @@ public class Barang {
         editStage.setFullScreen(true);
         editStage.setTitle("AjungStore - Edit Barang");
         editStage.show();
-    }
 
-
-}
+    }}
