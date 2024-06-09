@@ -178,6 +178,40 @@ public class Penjualan {
         }
     }
 
+    private int getTotalPenjualan(LocalDate start, LocalDate end) {
+        int totalPenjualan = 0;
+        String query = "SELECT COUNT(*) FROM sales WHERE transactionDate BETWEEN ? AND ?";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setDate(1, java.sql.Date.valueOf(start));
+            statement.setDate(2, java.sql.Date.valueOf(end));
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                totalPenjualan = resultSet.getInt(1);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return totalPenjualan;
+    }
+
+    private int getTotalPiutang(LocalDate start, LocalDate end) {
+        int totalPiutang = 0;
+        String query = "SELECT COUNT(*) FROM sales WHERE status = 'BELUM_LUNAS' AND transactionDate BETWEEN ? AND ?";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setDate(1, java.sql.Date.valueOf(start));
+            statement.setDate(2, java.sql.Date.valueOf(end));
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                totalPiutang = resultSet.getInt(1);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return totalPiutang;
+    }
+
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/indexPenjualan.css").toExternalForm();
@@ -294,10 +328,12 @@ public class Penjualan {
 
         HBox filterBox = new HBox();
         filterBox.setSpacing(10);
-        DatePicker startDate = new DatePicker();
+
+        DatePicker startDate = new DatePicker(LocalDate.now());
         Label untilLabel = new Label("s/d");
-        DatePicker endDate = new DatePicker();
-        filterBox.getChildren().addAll(startDate, untilLabel, endDate);
+        DatePicker endDate = new DatePicker(LocalDate.now());
+        Button filterbutton = new Button("Filter");
+        filterBox.getChildren().addAll(startDate, untilLabel, endDate, filterbutton);
 
         HBox buttonBox = new HBox();
         buttonBox.setSpacing(10);
@@ -350,28 +386,48 @@ public class Penjualan {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement statement = connection.prepareStatement(
-                        "SELECT sales.id, sales.transactionDate, customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
+        filterbutton.setOnAction(e -> {
+            LocalDate start = startDate.getValue();
+            LocalDate end = endDate.getValue();
 
-            ResultSet resultSet = statement.executeQuery();
+            data.clear(); // Clear existing data
 
-            int no = 1;
-            while (resultSet.next()) {
-                ObservableList<String> rowData = FXCollections.observableArrayList();
-                rowData.add(String.valueOf(no++));
-                LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
-                String formattedDate = transactionDate.format(formatter);
-                rowData.add(formattedDate);
-                rowData.add(resultSet.getString("name"));
-                rowData.add(resultSet.getString("status"));
-                rowData.add(resultSet.getString("id"));
-                data.add(rowData);
+            // Update quick stats
+            int totalPenjualan = getTotalPenjualan(start, end);
+            int totalPiutang = getTotalPiutang(start, end);
+
+            statPenjualanContent.setText(String.valueOf(totalPenjualan));
+            statPiutangContent.setText(String.valueOf(totalPiutang));
+
+            try (Connection connection = Dbconnect.getConnect();
+                    PreparedStatement statement = connection.prepareStatement(
+                            "SELECT sales.id, sales.transactionDate, customers.name, sales.status " +
+                                    "FROM sales " +
+                                    "LEFT JOIN customers ON sales.customerId = customers.id " +
+                                    "WHERE sales.transactionDate BETWEEN ? AND ?")) {
+
+                statement.setDate(1, java.sql.Date.valueOf(start));
+                statement.setDate(2, java.sql.Date.valueOf(end));
+
+                ResultSet resultSet = statement.executeQuery();
+
+                int no = 1;
+                while (resultSet.next()) {
+                    ObservableList<String> rowData = FXCollections.observableArrayList();
+                    rowData.add(String.valueOf(no++));
+                    LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
+                    String formattedDate = transactionDate.format(formatter);
+                    rowData.add(formattedDate);
+                    rowData.add(resultSet.getString("name"));
+                    rowData.add(resultSet.getString("status"));
+                    rowData.add(resultSet.getString("id"));
+                    data.add(rowData);
+                }
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
-
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
+        });
 
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
             final Button editButton = new Button("Edit");
@@ -420,16 +476,27 @@ public class Penjualan {
         });
         table.setItems(data);
 
-        tableBox.getChildren().addAll(filterBox, buttonBox, table);
+        tableBox.getChildren().setAll(filterBox, buttonBox, table);
 
-        contentBox.getChildren().addAll(contentHeaderBox, quickStats, tableBox);
+        contentBox.getChildren().setAll(contentHeaderBox, quickStats, tableBox);
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
 
-        Scene scene = new Scene(borderPane, 800, 600);
+        Scene scene = new Scene(borderPane, 1200, 800);
+        indexStage.setTitle("Dashboard Penjualan");
         indexStage.setScene(scene);
         indexStage.show();
+
+        // Update quick stats on load
+        int totalPenjualan = getTotalPenjualan(LocalDate.now(), LocalDate.now());
+        int totalPiutang = getTotalPiutang(LocalDate.now(), LocalDate.now());
+
+        statPenjualanContent.setText(String.valueOf(totalPenjualan));
+        statPiutangContent.setText(String.valueOf(totalPiutang));
+
+        // Trigger filter button click on load to display initial data
+        filterbutton.fire();
     }
 
     public void create(Stage createStage) throws Exception {
