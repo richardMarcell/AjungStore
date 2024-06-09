@@ -14,15 +14,15 @@ public class CustomerService {
   private String phoneNumber;
   private String address;
 
-  public void setName(String name){
+  public void setName(String name) {
     this.name = name;
   }
 
-  public void setPhoneNumber(String phoneNumber){
+  public void setPhoneNumber(String phoneNumber) {
     this.phoneNumber = phoneNumber;
   }
 
-  public void setAddress(String address){
+  public void setAddress(String address) {
     this.address = address;
   }
 
@@ -50,6 +50,22 @@ public class CustomerService {
       e.printStackTrace();
     }
     return customerNames;
+  }
+
+  public String getCustomerNameById(int id) {
+    String sql = "SELECT name FROM customers WHERE id = ?";
+    try (Connection connection = Dbconnect.getConnect();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+      preparedStatement.setInt(1, id);
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        if (resultSet.next()) {
+          return resultSet.getString("name");
+        }
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return "";
   }
 
   public int getCustomerIdByName(String name) {

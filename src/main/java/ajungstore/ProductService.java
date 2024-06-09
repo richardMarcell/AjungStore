@@ -40,6 +40,22 @@ public class ProductService {
     return productId;
   }
 
+  public String getProductNameById(int productId) {
+    String query = "SELECT name FROM products WHERE id = ?";
+    try (Connection connection = Dbconnect.getConnect();
+        PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+      preparedStatement.setInt(1, productId);
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        if (resultSet.next()) {
+          return resultSet.getString("name");
+        }
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return "";
+  }
+
   public double getProductPrice(String productName) {
     double productPrice = 0.0; // Set default value to handle cases where no product is found
     String query = "SELECT price FROM products WHERE name = ?";
