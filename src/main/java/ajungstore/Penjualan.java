@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -21,12 +20,10 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -277,19 +274,6 @@ public class Penjualan {
 
         statPenjualan.getChildren().addAll(statPenjualanHeader, statPenjualanContent);
 
-        VBox statHutang = new VBox();
-        statHutang.setAlignment(Pos.CENTER);
-        statHutang.getStyleClass().add("statHutang");
-        HBox.setHgrow(statHutang, Priority.ALWAYS);
-
-        Label statHutangHeader = new Label("Hutang");
-        statHutangHeader.getStyleClass().add("statHutangHeader");
-
-        Label statHutangContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
-        statHutangContent.getStyleClass().add("statHutangContent");
-
-        statHutang.getChildren().addAll(statHutangHeader, statHutangContent);
-
         VBox statPiutang = new VBox();
         statPiutang.setAlignment(Pos.CENTER);
         statPiutang.getStyleClass().add("statPiutang");
@@ -303,7 +287,7 @@ public class Penjualan {
 
         statPiutang.getChildren().addAll(statPiutangHeader, statPiutangContent);
 
-        quickStats.getChildren().setAll(statPenjualan, statHutang, statPiutang);
+        quickStats.getChildren().setAll(statPenjualan, statPiutang);
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
