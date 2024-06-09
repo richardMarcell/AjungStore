@@ -628,8 +628,33 @@ public class Penjualan {
         });
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
+        HBox kembalianField = new HBox();
+        kembalianField.setSpacing(75);
+        kembalianField.setAlignment(Pos.CENTER_LEFT);
+        Label kembalianLabel = new Label("Kembalian");
+        kembalianLabel.getStyleClass().add("kembalianLabel");
+        TextField kembalianInput = new TextField();
+        kembalianInput.setEditable(false);
+        kembalianInput.getStyleClass().add("kembalianInput");
+        kembalianField.getChildren().addAll(kembalianLabel, kembalianInput);
+
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            try {
+                double totalBayar = Double.parseDouble(totalBayarInput.getText().replaceAll("[^\\d]", ""));
+                double kembalian = totalBayar - totalPenjualan;
+                if (kembalian < 0) {
+                    kembalian = 0;
+                }
+                NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                kembalianInput.setText(formatter.format(kembalian));
+            } catch (NumberFormatException e) {
+                kembalianInput.setText("Rp0");
+            }
+        });
+
         secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
-                totalField, totalBayarField);
+                totalField, totalBayarField, kembalianField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -969,8 +994,41 @@ public class Penjualan {
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
+        HBox kembalianField = new HBox();
+        kembalianField.setSpacing(75);
+        kembalianField.setAlignment(Pos.CENTER_LEFT);
+        Label kembalianLabel = new Label("Kembalian");
+        kembalianLabel.getStyleClass().add("kembalianLabel");
+        TextField kembalianInput = new TextField();
+        kembalianInput.setEditable(false);
+        kembalianInput.getStyleClass().add("kembalianInput");
+        kembalianField.getChildren().addAll(kembalianLabel, kembalianInput);
+
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            try {
+                double totalBayar = Double.parseDouble(totalBayarInput.getText().replaceAll("[^\\d]", ""));
+                double kembalian = totalBayar - totalPenjualan;
+                if (kembalian < 0) {
+                    kembalian = 0;
+                }
+                NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                kembalianInput.setText(formatter.format(kembalian));
+            } catch (NumberFormatException e) {
+                kembalianInput.setText("Rp0");
+            }
+        });
+
+        // Hitung kembalian berdasarkan perhitungan totalPayment - totalSales
+        double kembalianDefaultValue = salesService.getTotalPayment() - salesService.getTotalSales();
+        if (kembalianDefaultValue < 0) {
+            kembalianInput.setText("Rp0");
+        } else {
+            kembalianInput.setText(currencyFormat.format(kembalianDefaultValue));
+        }
+
         secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
-                totalField, totalBayarField);
+                totalField, totalBayarField, kembalianField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
