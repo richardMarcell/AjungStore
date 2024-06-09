@@ -1,5 +1,6 @@
 package ajungstore;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,6 +16,18 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+
+import javafx.print.PageLayout;
+import javafx.print.PageOrientation;
+import javafx.print.Paper;
+import javafx.print.Printer;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.layout.VBox;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -50,6 +63,96 @@ public class Penjualan {
     private int totalKuantitas = 0;
     NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
     private List<SalesDetailService> daftarDetailTransaksi = new ArrayList<>();
+
+    private String generateReportHTML(LocalDate startDate, LocalDate endDate,
+            ObservableList<ObservableList<String>> data) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+        String start = startDate.format(formatter);
+        String end = endDate.format(formatter);
+
+        // Start building the HTML content
+        StringBuilder html = new StringBuilder();
+        html.append("<html><head><style>")
+                .append("body { font-family: Arial, sans-serif; padding-right: 80px;}")
+                .append("table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }")
+                .append("th, td { border: 1px solid #dddddd; padding: 8px; text-align: left; font-size: 12px; }")
+                .append("th { background-color: #f2f2f2; }")
+                .append("tr:nth-child(even) { background-color: #f9f9f9; }")
+                .append("h1, h2, h3 { text-align: center; }")
+                .append("</style></head><body>");
+
+        // Report header
+        html.append("<h1 style='font-size: 12px;'>Laporan Penjualan Toko Ajung</h1>");
+        html.append("<h2 style='font-size: 10px;'>Periode ").append(start).append(" s/d ").append(end).append("</h2>");
+
+        // Table headers
+        html.append("<table>")
+                .append("<tr>")
+                .append("<th>No</th>")
+                .append("<th>Tanggal</th>")
+                .append("<th>Nama Pelanggan</th>")
+                .append("<th>Status</th>")
+                .append("<th>Total Penjualan</th>")
+                .append("</tr>");
+
+        // Table data rows
+        // Table data rows
+        double totalPenjualan = 0;
+        int columnTotalSalesIndex = 4; // Sesuaikan dengan indeks kolom yang benar
+        for (ObservableList<String> row : data) {
+            html.append("<tr>");
+            for (int i = 0; i < row.size(); i++) {
+                if (i != columnTotalSalesIndex) { // Skip the column with sales ID
+                    html.append("<td>").append(i == 5 ? currencyFormat.format(Double.valueOf(row.get(i))) : row.get(i))
+                            .append("</td>");
+
+                    if (i == 5) {
+                        totalPenjualan += Double.valueOf(row.get(5));
+                    }
+                }
+
+            }
+            html.append("</tr>");
+        }
+
+        // Total penjualan footer
+        html.append("</table>");
+        html.append("<h3 style='text-align:left; font-size:12px;'>Total Penjualan: ")
+                .append(currencyFormat.format(totalPenjualan)).append("</h3>");
+
+        // End of HTML content
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    private void printReport(Stage stage, LocalDate startDate, LocalDate endDate,
+            ObservableList<ObservableList<String>> data) {
+        WebView webView = new WebView();
+        WebEngine webEngine = webView.getEngine();
+        String reportHTML = generateReportHTML(startDate, endDate, data);
+        webEngine.loadContent(reportHTML);
+
+        webEngine.documentProperty().addListener((obs, oldDoc, newDoc) -> {
+            if (newDoc != null) {
+                PrinterJob job = PrinterJob.createPrinterJob();
+                if (job != null) {
+                    // Configure job settings
+                    job.getJobSettings().setJobName("Laporan Penjualan Toko Ajung");
+
+                    // Set page layout to landscape
+                    PageLayout pageLayout = job.getPrinter().createPageLayout(Paper.A4, PageOrientation.LANDSCAPE,
+                            Printer.MarginType.DEFAULT);
+                    job.getJobSettings().setPageLayout(pageLayout);
+
+                    boolean success = job.printPage(webView);
+                    if (success) {
+                        job.endJob();
+                    }
+                }
+            }
+        });
+    }
 
     private void showAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -401,7 +504,7 @@ public class Penjualan {
 
             try (Connection connection = Dbconnect.getConnect();
                     PreparedStatement statement = connection.prepareStatement(
-                            "SELECT sales.id, sales.transactionDate, customers.name, sales.status " +
+                            "SELECT sales.id, sales.transactionDate, customers.name, sales.status, sales.totalSales " +
                                     "FROM sales " +
                                     "LEFT JOIN customers ON sales.customerId = customers.id " +
                                     "WHERE sales.transactionDate BETWEEN ? AND ?")) {
@@ -421,6 +524,7 @@ public class Penjualan {
                     rowData.add(resultSet.getString("name"));
                     rowData.add(resultSet.getString("status"));
                     rowData.add(resultSet.getString("id"));
+                    rowData.add(resultSet.getString("totalSales"));
                     data.add(rowData);
                 }
 
@@ -475,6 +579,16 @@ public class Penjualan {
             }
         });
         table.setItems(data);
+
+        buttonCetakLaporan.setOnAction(e -> {
+            LocalDate start = startDate.getValue();
+            LocalDate end = endDate.getValue();
+
+            // Ensure data is loaded for the selected date range
+            filterbutton.fire();
+
+            printReport(indexStage, start, end, data);
+        });
 
         tableBox.getChildren().setAll(filterBox, buttonBox, table);
 
