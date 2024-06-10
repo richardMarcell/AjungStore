@@ -177,7 +177,11 @@ public class Penjualan {
                 PreparedStatement preparedStatement = connection.prepareStatement(insertSalesSQL,
                         Statement.RETURN_GENERATED_KEYS)) {
 
-            preparedStatement.setInt(1, salesService.getCustomerId());
+            if (salesService.getCustomerId() == 0) {
+                preparedStatement.setNull(1, java.sql.Types.INTEGER); // Set customerId as null if it's 0
+            } else {
+                preparedStatement.setInt(1, salesService.getCustomerId());
+            }
             preparedStatement.setInt(2, salesService.getUserId());
             preparedStatement.setDate(3, java.sql.Date.valueOf(salesService.getTransactionDate()));
             preparedStatement.setString(4, salesService.getStatus());
@@ -207,7 +211,11 @@ public class Penjualan {
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement preparedStatement = connection.prepareStatement(updateSalesSQL)) {
 
-            preparedStatement.setInt(1, salesService.getCustomerId());
+            if (salesService.getCustomerId() == 0) {
+                preparedStatement.setNull(1, java.sql.Types.INTEGER); // Set customerId as null if it's 0
+            } else {
+                preparedStatement.setInt(1, salesService.getCustomerId());
+            }
             preparedStatement.setInt(2, salesService.getUserId());
             preparedStatement.setDate(3, java.sql.Date.valueOf(salesService.getTransactionDate()));
             preparedStatement.setString(4, salesService.getStatus());
@@ -521,7 +529,7 @@ public class Penjualan {
                     LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
                     String formattedDate = transactionDate.format(formatter);
                     rowData.add(formattedDate);
-                    rowData.add(resultSet.getString("name"));
+                    rowData.add(resultSet.getString("name") != null ? resultSet.getString("name") : "Cash");
                     rowData.add(resultSet.getString("status"));
                     rowData.add(resultSet.getString("id"));
                     rowData.add(resultSet.getString("totalSales"));
@@ -725,6 +733,7 @@ public class Penjualan {
         CustomerService customerService = new CustomerService();
         List<String> customerNames = customerService.getAllCustomerNames();
         namaPelangganInput.getItems().addAll(customerNames);
+        namaPelangganInput.getItems().add("Cash");
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -856,6 +865,13 @@ public class Penjualan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+
+            if (namaPelangganInput.getValue() == "Cash"
+                    && (totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText())))) {
+                showAlert("Pelanggan Cash wajib melunasi total penjualan");
+                return;
+            }
+
             if (nomorFakturInput.getText().isEmpty()) {
                 showAlert("Nomor Faktur harus diisi");
                 return;
@@ -878,7 +894,8 @@ public class Penjualan {
             }
             System.out.println("Berhasil menyimpan data barang");
             try {
-                salesService.setCustomerId(customerService.getCustomerIdByName(namaPelangganInput.getValue()));
+                salesService.setCustomerId(namaPelangganInput.getValue() == "Cash" ? 0
+                        : customerService.getCustomerIdByName(namaPelangganInput.getValue()));
                 salesService.setUserId(1); // Asumsikan userId 1 untuk Admin, bisa diubah sesuai konteks
                 salesService.setTransactionDate(tanggalInput.getValue());
 
@@ -948,7 +965,7 @@ public class Penjualan {
                 double totalPayment = resultSet.getDouble("totalPayment");
 
                 salesService.setTransactionDate(transactionDate);
-                salesService.setCustomerId(Integer.valueOf(customerId));
+                salesService.setCustomerId(customerId != null ? Integer.valueOf(customerId) : 0);
                 salesService.setNumberFactur(numberFactur);
                 salesService.setTotalSales(totalSales);
                 salesService.setTotalPayment(totalPayment);
@@ -1068,7 +1085,9 @@ public class Penjualan {
         CustomerService customerService = new CustomerService();
         List<String> customerNames = customerService.getAllCustomerNames();
         namaPelangganInput.getItems().addAll(customerNames);
-        namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()));
+        namaPelangganInput.getItems().add("Cash");
+        namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()) == "" ? "Cash"
+                : customerService.getCustomerNameById(salesService.getCustomerId()));
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -1231,6 +1250,12 @@ public class Penjualan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+            if (namaPelangganInput.getValue() == "Cash"
+                    && (totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText())))) {
+                showAlert("Pelanggan Cash wajib melunasi total penjualan");
+                return;
+            }
+
             if (nomorFakturInput.getText().isEmpty()) {
                 showAlert("Nomor Faktur harus diisi");
                 return;
