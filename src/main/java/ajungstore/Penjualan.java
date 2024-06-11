@@ -1,5 +1,6 @@
 package ajungstore;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,6 +16,18 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+
+import javafx.print.PageLayout;
+import javafx.print.PageOrientation;
+import javafx.print.Paper;
+import javafx.print.Printer;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.layout.VBox;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -51,6 +64,96 @@ public class Penjualan {
     NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
     private List<SalesDetailService> daftarDetailTransaksi = new ArrayList<>();
 
+    private String generateReportHTML(LocalDate startDate, LocalDate endDate,
+            ObservableList<ObservableList<String>> data) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+        String start = startDate.format(formatter);
+        String end = endDate.format(formatter);
+
+        // Start building the HTML content
+        StringBuilder html = new StringBuilder();
+        html.append("<html><head><style>")
+                .append("body { font-family: Arial, sans-serif; padding-right: 80px;}")
+                .append("table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }")
+                .append("th, td { border: 1px solid #dddddd; padding: 8px; text-align: left; font-size: 12px; }")
+                .append("th { background-color: #f2f2f2; }")
+                .append("tr:nth-child(even) { background-color: #f9f9f9; }")
+                .append("h1, h2, h3 { text-align: center; }")
+                .append("</style></head><body>");
+
+        // Report header
+        html.append("<h1 style='font-size: 12px;'>Laporan Penjualan Toko Ajung</h1>");
+        html.append("<h2 style='font-size: 10px;'>Periode ").append(start).append(" s/d ").append(end).append("</h2>");
+
+        // Table headers
+        html.append("<table>")
+                .append("<tr>")
+                .append("<th>No</th>")
+                .append("<th>Tanggal</th>")
+                .append("<th>Nama Pelanggan</th>")
+                .append("<th>Status</th>")
+                .append("<th>Total Penjualan</th>")
+                .append("</tr>");
+
+        // Table data rows
+        // Table data rows
+        double totalPenjualan = 0;
+        int columnTotalSalesIndex = 4; // Sesuaikan dengan indeks kolom yang benar
+        for (ObservableList<String> row : data) {
+            html.append("<tr>");
+            for (int i = 0; i < row.size(); i++) {
+                if (i != columnTotalSalesIndex) { // Skip the column with sales ID
+                    html.append("<td>").append(i == 5 ? currencyFormat.format(Double.valueOf(row.get(i))) : row.get(i))
+                            .append("</td>");
+
+                    if (i == 5) {
+                        totalPenjualan += Double.valueOf(row.get(5));
+                    }
+                }
+
+            }
+            html.append("</tr>");
+        }
+
+        // Total penjualan footer
+        html.append("</table>");
+        html.append("<h3 style='text-align:left; font-size:12px;'>Total Penjualan: ")
+                .append(currencyFormat.format(totalPenjualan)).append("</h3>");
+
+        // End of HTML content
+        html.append("</body></html>");
+
+        return html.toString();
+    }
+
+    private void printReport(Stage stage, LocalDate startDate, LocalDate endDate,
+            ObservableList<ObservableList<String>> data) {
+        WebView webView = new WebView();
+        WebEngine webEngine = webView.getEngine();
+        String reportHTML = generateReportHTML(startDate, endDate, data);
+        webEngine.loadContent(reportHTML);
+
+        webEngine.documentProperty().addListener((obs, oldDoc, newDoc) -> {
+            if (newDoc != null) {
+                PrinterJob job = PrinterJob.createPrinterJob();
+                if (job != null) {
+                    // Configure job settings
+                    job.getJobSettings().setJobName("Laporan Penjualan Toko Ajung");
+
+                    // Set page layout to landscape
+                    PageLayout pageLayout = job.getPrinter().createPageLayout(Paper.A4, PageOrientation.LANDSCAPE,
+                            Printer.MarginType.DEFAULT);
+                    job.getJobSettings().setPageLayout(pageLayout);
+
+                    boolean success = job.printPage(webView);
+                    if (success) {
+                        job.endJob();
+                    }
+                }
+            }
+        });
+    }
+
     private void showAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
@@ -74,7 +177,11 @@ public class Penjualan {
                 PreparedStatement preparedStatement = connection.prepareStatement(insertSalesSQL,
                         Statement.RETURN_GENERATED_KEYS)) {
 
-            preparedStatement.setInt(1, salesService.getCustomerId());
+            if (salesService.getCustomerId() == 0) {
+                preparedStatement.setNull(1, java.sql.Types.INTEGER); // Set customerId as null if it's 0
+            } else {
+                preparedStatement.setInt(1, salesService.getCustomerId());
+            }
             preparedStatement.setInt(2, salesService.getUserId());
             preparedStatement.setDate(3, java.sql.Date.valueOf(salesService.getTransactionDate()));
             preparedStatement.setString(4, salesService.getStatus());
@@ -104,7 +211,11 @@ public class Penjualan {
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement preparedStatement = connection.prepareStatement(updateSalesSQL)) {
 
-            preparedStatement.setInt(1, salesService.getCustomerId());
+            if (salesService.getCustomerId() == 0) {
+                preparedStatement.setNull(1, java.sql.Types.INTEGER); // Set customerId as null if it's 0
+            } else {
+                preparedStatement.setInt(1, salesService.getCustomerId());
+            }
             preparedStatement.setInt(2, salesService.getUserId());
             preparedStatement.setDate(3, java.sql.Date.valueOf(salesService.getTransactionDate()));
             preparedStatement.setString(4, salesService.getStatus());
@@ -176,6 +287,40 @@ public class Penjualan {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private int getTotalPenjualan(LocalDate start, LocalDate end) {
+        int totalPenjualan = 0;
+        String query = "SELECT COUNT(*) FROM sales WHERE transactionDate BETWEEN ? AND ?";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setDate(1, java.sql.Date.valueOf(start));
+            statement.setDate(2, java.sql.Date.valueOf(end));
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                totalPenjualan = resultSet.getInt(1);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return totalPenjualan;
+    }
+
+    private int getTotalPiutang(LocalDate start, LocalDate end) {
+        int totalPiutang = 0;
+        String query = "SELECT COUNT(*) FROM sales WHERE status = 'BELUM_LUNAS' AND transactionDate BETWEEN ? AND ?";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setDate(1, java.sql.Date.valueOf(start));
+            statement.setDate(2, java.sql.Date.valueOf(end));
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                totalPiutang = resultSet.getInt(1);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return totalPiutang;
     }
 
     public void index(Stage indexStage) throws Exception {
@@ -294,10 +439,12 @@ public class Penjualan {
 
         HBox filterBox = new HBox();
         filterBox.setSpacing(10);
-        DatePicker startDate = new DatePicker();
+
+        DatePicker startDate = new DatePicker(LocalDate.now());
         Label untilLabel = new Label("s/d");
-        DatePicker endDate = new DatePicker();
-        filterBox.getChildren().addAll(startDate, untilLabel, endDate);
+        DatePicker endDate = new DatePicker(LocalDate.now());
+        Button filterbutton = new Button("Filter");
+        filterBox.getChildren().addAll(startDate, untilLabel, endDate, filterbutton);
 
         HBox buttonBox = new HBox();
         buttonBox.setSpacing(10);
@@ -350,28 +497,49 @@ public class Penjualan {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        try (Connection connection = Dbconnect.getConnect();
-                PreparedStatement statement = connection.prepareStatement(
-                        "SELECT sales.id, sales.transactionDate, customers.name, sales.status FROM sales LEFT JOIN customers ON sales.customerId = customers.id")) {
+        filterbutton.setOnAction(e -> {
+            LocalDate start = startDate.getValue();
+            LocalDate end = endDate.getValue();
 
-            ResultSet resultSet = statement.executeQuery();
+            data.clear(); // Clear existing data
 
-            int no = 1;
-            while (resultSet.next()) {
-                ObservableList<String> rowData = FXCollections.observableArrayList();
-                rowData.add(String.valueOf(no++));
-                LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
-                String formattedDate = transactionDate.format(formatter);
-                rowData.add(formattedDate);
-                rowData.add(resultSet.getString("name"));
-                rowData.add(resultSet.getString("status"));
-                rowData.add(resultSet.getString("id"));
-                data.add(rowData);
+            // Update quick stats
+            int totalPenjualan = getTotalPenjualan(start, end);
+            int totalPiutang = getTotalPiutang(start, end);
+
+            statPenjualanContent.setText(String.valueOf(totalPenjualan));
+            statPiutangContent.setText(String.valueOf(totalPiutang));
+
+            try (Connection connection = Dbconnect.getConnect();
+                    PreparedStatement statement = connection.prepareStatement(
+                            "SELECT sales.id, sales.transactionDate, customers.name, sales.status, sales.totalSales " +
+                                    "FROM sales " +
+                                    "LEFT JOIN customers ON sales.customerId = customers.id " +
+                                    "WHERE sales.transactionDate BETWEEN ? AND ?")) {
+
+                statement.setDate(1, java.sql.Date.valueOf(start));
+                statement.setDate(2, java.sql.Date.valueOf(end));
+
+                ResultSet resultSet = statement.executeQuery();
+
+                int no = 1;
+                while (resultSet.next()) {
+                    ObservableList<String> rowData = FXCollections.observableArrayList();
+                    rowData.add(String.valueOf(no++));
+                    LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
+                    String formattedDate = transactionDate.format(formatter);
+                    rowData.add(formattedDate);
+                    rowData.add(resultSet.getString("name") != null ? resultSet.getString("name") : "Cash");
+                    rowData.add(resultSet.getString("status"));
+                    rowData.add(resultSet.getString("id"));
+                    rowData.add(resultSet.getString("totalSales"));
+                    data.add(rowData);
+                }
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
-
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
+        });
 
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
             final Button editButton = new Button("Edit");
@@ -420,16 +588,37 @@ public class Penjualan {
         });
         table.setItems(data);
 
-        tableBox.getChildren().addAll(filterBox, buttonBox, table);
+        buttonCetakLaporan.setOnAction(e -> {
+            LocalDate start = startDate.getValue();
+            LocalDate end = endDate.getValue();
 
-        contentBox.getChildren().addAll(contentHeaderBox, quickStats, tableBox);
+            // Ensure data is loaded for the selected date range
+            filterbutton.fire();
+
+            printReport(indexStage, start, end, data);
+        });
+
+        tableBox.getChildren().setAll(filterBox, buttonBox, table);
+
+        contentBox.getChildren().setAll(contentHeaderBox, quickStats, tableBox);
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
 
-        Scene scene = new Scene(borderPane, 800, 600);
+        Scene scene = new Scene(borderPane, 1200, 800);
+        indexStage.setTitle("Dashboard Penjualan");
         indexStage.setScene(scene);
         indexStage.show();
+
+        // Update quick stats on load
+        int totalPenjualan = getTotalPenjualan(LocalDate.now(), LocalDate.now());
+        int totalPiutang = getTotalPiutang(LocalDate.now(), LocalDate.now());
+
+        statPenjualanContent.setText(String.valueOf(totalPenjualan));
+        statPiutangContent.setText(String.valueOf(totalPiutang));
+
+        // Trigger filter button click on load to display initial data
+        filterbutton.fire();
     }
 
     public void create(Stage createStage) throws Exception {
@@ -544,6 +733,7 @@ public class Penjualan {
         CustomerService customerService = new CustomerService();
         List<String> customerNames = customerService.getAllCustomerNames();
         namaPelangganInput.getItems().addAll(customerNames);
+        namaPelangganInput.getItems().add("Cash");
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -628,8 +818,33 @@ public class Penjualan {
         });
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
+        HBox kembalianField = new HBox();
+        kembalianField.setSpacing(75);
+        kembalianField.setAlignment(Pos.CENTER_LEFT);
+        Label kembalianLabel = new Label("Kembalian");
+        kembalianLabel.getStyleClass().add("kembalianLabel");
+        TextField kembalianInput = new TextField();
+        kembalianInput.setEditable(false);
+        kembalianInput.getStyleClass().add("kembalianInput");
+        kembalianField.getChildren().addAll(kembalianLabel, kembalianInput);
+
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            try {
+                double totalBayar = Double.parseDouble(totalBayarInput.getText().replaceAll("[^\\d]", ""));
+                double kembalian = totalBayar - totalPenjualan;
+                if (kembalian < 0) {
+                    kembalian = 0;
+                }
+                NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                kembalianInput.setText(formatter.format(kembalian));
+            } catch (NumberFormatException e) {
+                kembalianInput.setText("Rp0");
+            }
+        });
+
         secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
-                totalField, totalBayarField);
+                totalField, totalBayarField, kembalianField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -650,6 +865,13 @@ public class Penjualan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+
+            if (namaPelangganInput.getValue() == "Cash"
+                    && (totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText())))) {
+                showAlert("Pelanggan Cash wajib melunasi total penjualan");
+                return;
+            }
+
             if (nomorFakturInput.getText().isEmpty()) {
                 showAlert("Nomor Faktur harus diisi");
                 return;
@@ -672,7 +894,8 @@ public class Penjualan {
             }
             System.out.println("Berhasil menyimpan data barang");
             try {
-                salesService.setCustomerId(customerService.getCustomerIdByName(namaPelangganInput.getValue()));
+                salesService.setCustomerId(namaPelangganInput.getValue() == "Cash" ? 0
+                        : customerService.getCustomerIdByName(namaPelangganInput.getValue()));
                 salesService.setUserId(1); // Asumsikan userId 1 untuk Admin, bisa diubah sesuai konteks
                 salesService.setTransactionDate(tanggalInput.getValue());
 
@@ -742,7 +965,7 @@ public class Penjualan {
                 double totalPayment = resultSet.getDouble("totalPayment");
 
                 salesService.setTransactionDate(transactionDate);
-                salesService.setCustomerId(Integer.valueOf(customerId));
+                salesService.setCustomerId(customerId != null ? Integer.valueOf(customerId) : 0);
                 salesService.setNumberFactur(numberFactur);
                 salesService.setTotalSales(totalSales);
                 salesService.setTotalPayment(totalPayment);
@@ -862,7 +1085,9 @@ public class Penjualan {
         CustomerService customerService = new CustomerService();
         List<String> customerNames = customerService.getAllCustomerNames();
         namaPelangganInput.getItems().addAll(customerNames);
-        namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()));
+        namaPelangganInput.getItems().add("Cash");
+        namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()) == "" ? "Cash"
+                : customerService.getCustomerNameById(salesService.getCustomerId()));
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -969,8 +1194,41 @@ public class Penjualan {
         // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
         totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
 
+        HBox kembalianField = new HBox();
+        kembalianField.setSpacing(75);
+        kembalianField.setAlignment(Pos.CENTER_LEFT);
+        Label kembalianLabel = new Label("Kembalian");
+        kembalianLabel.getStyleClass().add("kembalianLabel");
+        TextField kembalianInput = new TextField();
+        kembalianInput.setEditable(false);
+        kembalianInput.getStyleClass().add("kembalianInput");
+        kembalianField.getChildren().addAll(kembalianLabel, kembalianInput);
+
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            try {
+                double totalBayar = Double.parseDouble(totalBayarInput.getText().replaceAll("[^\\d]", ""));
+                double kembalian = totalBayar - totalPenjualan;
+                if (kembalian < 0) {
+                    kembalian = 0;
+                }
+                NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                kembalianInput.setText(formatter.format(kembalian));
+            } catch (NumberFormatException e) {
+                kembalianInput.setText("Rp0");
+            }
+        });
+
+        // Hitung kembalian berdasarkan perhitungan totalPayment - totalSales
+        double kembalianDefaultValue = salesService.getTotalPayment() - salesService.getTotalSales();
+        if (kembalianDefaultValue < 0) {
+            kembalianInput.setText("Rp0");
+        } else {
+            kembalianInput.setText(currencyFormat.format(kembalianDefaultValue));
+        }
+
         secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid, tambahDetailTransaksiButton,
-                totalField, totalBayarField);
+                totalField, totalBayarField, kembalianField);
 
         formBox.getChildren().addAll(primaryForm, secondaryForm);
 
@@ -992,6 +1250,12 @@ public class Penjualan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
+            if (namaPelangganInput.getValue() == "Cash"
+                    && (totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText())))) {
+                showAlert("Pelanggan Cash wajib melunasi total penjualan");
+                return;
+            }
+
             if (nomorFakturInput.getText().isEmpty()) {
                 showAlert("Nomor Faktur harus diisi");
                 return;

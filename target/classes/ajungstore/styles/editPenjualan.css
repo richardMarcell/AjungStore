@@ -150,6 +150,15 @@
   -fx-padding: 15px 4px;
 }
 
+.kembalianLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.kembalianInput {
+  -fx-padding: 15px 4px;
+}
+
 .submitButton {
   -fx-background-color: #000000;
   -fx-border-radius: 10px;
