@@ -574,6 +574,7 @@ public class Barang {
         createStage.setTitle("AjungStore - Create Barang");
         createStage.show();
 
+  
     }
    
     public void edit(Stage editStage, String id) throws Exception {
@@ -755,23 +756,31 @@ public class Barang {
         submitButton.setOnAction(e -> {
             String namaBarang = namaBarangInput.getText();
             String harga = hargaSatuanInput.getText();
-            updateData(id, namaBarang, harga);
-            if (namaBarang.isEmpty() || harga.isEmpty()) {
-                Alert alert = new Alert(AlertType.WARNING);
-                alert.setTitle("Peringatan");
-                alert.setHeaderText(null);
-                alert.setContentText("Nama Barang atau Harga Satuan tidak boleh kosong.");
-                alert.showAndWait();
+        
+            if (!namaBarang.equals(data.get(0)) || !harga.equals(formatter.format(Double.valueOf(data.get(1))))) {
+                if (namaBarang.isEmpty() || harga.isEmpty()) {
+                    Alert alert = new Alert(AlertType.WARNING);
+                    alert.setTitle("Peringatan");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Nama Barang atau Harga Satuan tidak boleh kosong.");
+                    alert.showAndWait();
+                } else {
+                    String HargaSatuan = convertToInteger(harga);
+                    updateData(id, namaBarang, HargaSatuan);
+                    try {
+                        index(editStage);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
             } else {
-                String HargaSatuan = convertToInteger(harga);
-                updateData(id, namaBarang, HargaSatuan);
-
-            try {
-                index(editStage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
+                // Jika tidak ada perubahan, maka tidak melakukan update data
+                try {
+                    index(editStage);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
-        }
         });
 
 
