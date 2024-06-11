@@ -1,13 +1,11 @@
 package ajungstore;
 
-
 import java.util.Arrays;
 import java.util.Optional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -35,14 +33,13 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-
 public class Barang {
 
     private void refreshTableData(TableView<ObservableList<String>> table) {
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
 
         try (Connection connection = Dbconnect.getConnect();
-             PreparedStatement statement = connection.prepareStatement("SELECT * FROM products")) {
+                PreparedStatement statement = connection.prepareStatement("SELECT * FROM products")) {
             ResultSet resultSet = statement.executeQuery();
 
             int no = 1;
@@ -64,11 +61,10 @@ public class Barang {
     private void saveData(String name, String price) {
         String query = "INSERT INTO products(name, price) VALUES (?, ?)";
         try (Connection connection = Dbconnect.getConnect();
-             PreparedStatement statement = connection.prepareStatement(query)) {
+                PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, name);
             statement.setString(2, price);
             int rowsInserted = statement.executeUpdate();
-
 
             if (rowsInserted > 0) {
                 System.out.println("Data berhasil disimpan.");
@@ -83,12 +79,10 @@ public class Barang {
     private void deleteData(String id) {
         String query = "DELETE FROM products WHERE id = ?";
 
-
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, id);
             int rowsDeleted = statement.executeUpdate();
-
 
             if (rowsDeleted > 0) {
                 System.out.println("Data berhasil dihapus.");
@@ -100,46 +94,38 @@ public class Barang {
         }
     }
 
-
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/indexBarang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
-
         GridPane header = new GridPane();
         header.setMinHeight(80);
         header.getStyleClass().add("header");
-
 
         Label appName = new Label("AjungStore");
         appName.setTextFill(Color.RED);
         appName.getStyleClass().add("appName");
 
-
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
-
 
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
-
 
         header.setAlignment(Pos.CENTER);
         header.add(appName, 0, 0);
         header.add(welcome, 1, 0);
         borderPane.setTop(header);
 
-
         VBox sidebar = new VBox();
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-
         Pelanggan pelanggan = new Pelanggan();
         Penjualan penjualan = new Penjualan();
-
+        Piutang piutang = new Piutang();
 
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
@@ -151,7 +137,6 @@ public class Barang {
             }
         });
 
-
         Button navBarang = new Button("Barang");
         navBarang.getStyleClass().add("navBarang");
         navBarang.setOnAction(e -> {
@@ -161,7 +146,6 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-
 
         Button navPelanggan = new Button("Pelanggan");
         navPelanggan.getStyleClass().add("navPelanggan");
@@ -173,40 +157,41 @@ public class Barang {
             }
         });
 
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(indexStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
-
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
         contentBox.setSpacing(10);
 
-
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
-
 
         Label contentHeaderTitle = new Label("Dashboard Barang");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-
         Label contentHeaderDescription = new Label("Pengelolaan daftar barang Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
-
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
-
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
-
 
         Button buttonCreate = new Button("+ Barang");
         buttonCreate.getStyleClass().add("buttonCreate");
         buttonCreate.setAlignment(Pos.CENTER);
         buttonCreate.setTextFill(Color.WHITE);
         buttonCreate.setMinWidth(150);
-
 
         buttonCreate.setOnAction(e -> {
             try {
@@ -216,40 +201,31 @@ public class Barang {
             }
         });
 
-
         TableView<ObservableList<String>> table = new TableView<>();
-
 
         TableColumn<ObservableList<String>, String> colNo = new TableColumn<>("No");
         TableColumn<ObservableList<String>, String> colNamaBarang = new TableColumn<>("Nama Barang");
         TableColumn<ObservableList<String>, String> colHarga = new TableColumn<>("Harga");
         TableColumn<ObservableList<String>, String> colAction = new TableColumn<>("Action");
 
-
         colNo.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
         colNamaBarang.prefWidthProperty().bind(table.widthProperty().multiply(0.4));
         colHarga.prefWidthProperty().bind(table.widthProperty().multiply(0.3));
         colAction.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
-
 
         colNo.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(0)));
         colNamaBarang.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
         colHarga.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
         colAction.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(""));
 
-
         table.getColumns().addAll(colNo, colNamaBarang, colHarga, colAction);
 
-
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
-
 
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement statement = connection.prepareStatement("SELECT * FROM products")) {
 
-
             ResultSet resultSet = statement.executeQuery();
-
 
             int no = 1;
             while (resultSet.next()) {
@@ -264,11 +240,10 @@ public class Barang {
             e.printStackTrace();
         }
 
-
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
             final Button editButton = new Button("Edit");
             final Button deleteButton = new Button("Hapus");
-       
+
             {
                 // Handle edit button action
                 editButton.setOnAction(event -> {
@@ -278,18 +253,18 @@ public class Barang {
                         ex.printStackTrace();
                     }
                 });
-       
+
                 // Handle delete button action
                 deleteButton.setOnAction(event -> {
                     ObservableList<String> rowData = getTableView().getItems().get(getIndex());
                     String id = rowData.get(3); // Assuming the ID is in the first column
-       
+
                     // Show confirmation dialog
                     Alert alert = new Alert(AlertType.CONFIRMATION);
                     alert.setTitle("Konfirmasi Penghapusan");
                     alert.setHeaderText(null);
                     alert.setContentText("Apakah Anda yakin ingin menghapus barang ini?");
-                   
+
                     Optional<ButtonType> result = alert.showAndWait();
                     if (result.isPresent() && result.get() == ButtonType.OK) {
                         deleteData(id);
@@ -297,11 +272,11 @@ public class Barang {
                     }
                 });
             }
-       
+
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-       
+
                 if (empty) {
                     setGraphic(null);
                 } else {
@@ -311,17 +286,14 @@ public class Barang {
                 }
             }
         });
-       
+
         table.setItems(data);
         tableBox.getChildren().addAll(buttonCreate, table);
 
-
         contentBox.getChildren().addAll(contentHeaderBox, tableBox);
-
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
-
 
         Scene scene = new Scene(borderPane, 800, 600);
         indexStage.setScene(scene);
@@ -330,39 +302,39 @@ public class Barang {
         indexStage.show();
     }
 
-
     public void create(Stage createStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/createBarang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
-   
+
         GridPane header = new GridPane();
         header.setMinHeight(80);
         header.getStyleClass().add("header");
-   
+
         Label appName = new Label("AjungStore");
         appName.setTextFill(Color.RED);
         appName.getStyleClass().add("appName");
-   
+
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
-   
+
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
-   
+
         header.setAlignment(Pos.CENTER);
         header.add(appName, 0, 0);
         header.add(welcome, 1, 0);
         borderPane.setTop(header);
-   
+
         VBox sidebar = new VBox();
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
-   
+
         Pelanggan pelanggan = new Pelanggan();
         Penjualan penjualan = new Penjualan();
-   
+        Piutang piutang = new Piutang();
+
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -372,7 +344,7 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-   
+
         Button navBarang = new Button("Barang");
         navBarang.getStyleClass().add("navBarang");
         navBarang.setOnAction(e -> {
@@ -382,7 +354,7 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-   
+
         Button navPelanggan = new Button("Pelanggan");
         navPelanggan.getStyleClass().add("navPelanggan");
         navPelanggan.setOnAction(e -> {
@@ -392,32 +364,42 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-   
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
-   
+
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
+
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
         contentBox.setSpacing(30);
-   
+
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
-   
+
         Label contentHeaderTitle = new Label("Tambah Barang");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
-   
+
         Label contentHeaderDescription = new Label("Menambah barang yang ada di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
-   
+
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
-   
+
         VBox formBox = new VBox();
         formBox.getStyleClass().add("formBox");
         formBox.setSpacing(20);
-   
+
         VBox primaryForm = new VBox();
         primaryForm.setSpacing(30);
         primaryForm.getStyleClass().add("primaryForm");
-   
+
         HBox namaBarangField = new HBox();
         namaBarangField.setSpacing(60);
         namaBarangField.setAlignment(Pos.CENTER_LEFT);
@@ -427,7 +409,7 @@ public class Barang {
         namaBarangInput.getStyleClass().add("namaBarangInput");
         HBox.setHgrow(namaBarangInput, Priority.ALWAYS);
         namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
-   
+
         HBox hargaSatuanField = new HBox();
         hargaSatuanField.setSpacing(60);
         hargaSatuanField.setAlignment(Pos.CENTER_LEFT);
@@ -437,14 +419,14 @@ public class Barang {
         hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
         HBox.setHgrow(hargaSatuanInput, Priority.ALWAYS);
         hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
-   
+
         primaryForm.getChildren().addAll(namaBarangField, hargaSatuanField);
-   
+
         formBox.getChildren().addAll(primaryForm);
-   
+
         HBox contentFooterBox = new HBox();
         contentFooterBox.setSpacing(20);
-   
+
         Button backButton = new Button("Kembali");
         backButton.getStyleClass().add("backButton");
         backButton.setOnAction(e -> {
@@ -454,14 +436,14 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-   
+
         Button submitButton = new Button("Simpan");
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
             String namaBarang = namaBarangInput.getText();
             String hargaSatuan = hargaSatuanInput.getText();
-   
+
             if (namaBarang.isEmpty() || hargaSatuan.isEmpty()) {
                 Alert alert = new Alert(AlertType.WARNING);
                 alert.setTitle("Peringatan");
@@ -477,66 +459,58 @@ public class Barang {
                 }
             }
         });
-   
+
         contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
         contentFooterBox.getChildren().addAll(backButton, submitButton);
-   
+
         contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
-   
+
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
-   
+
         Scene scene = new Scene(borderPane, 800, 600);
         createStage.setScene(scene);
         createStage.setFullScreen(true);
         createStage.setTitle("AjungStore - Create Barang");
         createStage.show();
     }
-   
+
     public void edit(Stage editStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/createBarang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
-
         GridPane header = new GridPane();
         header.setMinHeight(80);
         header.getStyleClass().add("header");
-
 
         Label appName = new Label("AjungStore");
         appName.setTextFill(Color.RED);
         appName.getStyleClass().add("appName");
 
-
         Label welcome = new Label("Hai, Admin");
         welcome.getStyleClass().add("welcome");
-
 
         // Set the first column to expand to take the remaining space
         ColumnConstraints column1 = new ColumnConstraints();
         column1.setHgrow(Priority.ALWAYS);
         header.getColumnConstraints().add(column1);
 
-
         header.setAlignment(Pos.CENTER);
-
 
         header.add(appName, 0, 0); // Add AjungStore to the first column, first row
         header.add(welcome, 1, 0); // Add Hai, Admin to the second column, first row
 
-
         borderPane.setTop(header);
-
 
         VBox sidebar = new VBox();
         sidebar.setMinWidth(200);
         sidebar.getStyleClass().add("sidebar");
 
-
         // Buat item navigasi
         Pelanggan pelanggan = new Pelanggan();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -546,7 +520,6 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-
 
         Button navBarang = new Button("Barang");
         navBarang.getStyleClass().add("navBarang");
@@ -567,39 +540,40 @@ public class Barang {
             }
         });
 
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(editStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
-
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
         contentBox.setSpacing(30);
 
-
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
-
 
         Label contentHeaderTitle = new Label("Edit Barang");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-
         Label contentHeaderDescription = new Label("Mengedit barang yang ada di Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
-
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
-
 
         VBox formBox = new VBox();
         formBox.getStyleClass().add("formBox");
         formBox.setSpacing(20);
 
-
         VBox primaryForm = new VBox();
         primaryForm.setSpacing(30);
         primaryForm.getStyleClass().add("primaryForm");
-
 
         HBox namaBarangField = new HBox();
         namaBarangField.setSpacing(60);
@@ -611,7 +585,6 @@ public class Barang {
         HBox.setHgrow(namaBarangInput, Priority.ALWAYS);
         namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
 
-
         HBox hargaSatuanField = new HBox();
         hargaSatuanField.setSpacing(60);
         hargaSatuanField.setAlignment(Pos.CENTER_LEFT);
@@ -622,16 +595,12 @@ public class Barang {
         HBox.setHgrow(hargaSatuanInput, Priority.ALWAYS);
         hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
 
-
         primaryForm.getChildren().addAll(namaBarangField, hargaSatuanField);
-
 
         formBox.getChildren().addAll(primaryForm);
 
-
         HBox contentFooterBox = new HBox();
         contentFooterBox.setSpacing(20);
-
 
         Button backButton = new Button("Kembali");
         backButton.getStyleClass().add("backButton");
@@ -642,7 +611,6 @@ public class Barang {
                 ex.printStackTrace();
             }
         });
-
 
         Button submitButton = new Button("Simpan");
         submitButton.getStyleClass().add("submitButton");
@@ -656,17 +624,13 @@ public class Barang {
             }
         });
 
-
         contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
         contentFooterBox.getChildren().addAll(backButton, submitButton);
 
-
         contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
-
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
-
 
         Scene scene = new Scene(borderPane, 800, 600);
         editStage.setScene(scene);
@@ -674,6 +638,5 @@ public class Barang {
         editStage.setTitle("AjungStore - Edit Barang");
         editStage.show();
     }
-
 
 }

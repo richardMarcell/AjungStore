@@ -40,6 +40,13 @@
   -fx-background-color: none;
 }
 
+.navPiutang {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+  -fx-background-color: none;
+}
+
+
 .contentBox {
   -fx-padding: 10px 10px 10px 10px;
 }

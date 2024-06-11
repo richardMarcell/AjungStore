@@ -45,7 +45,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 
-public class Penjualan {
+public class Piutang {
     private double totalPenjualan = 0.0;
     private int totalKuantitas = 0;
     NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
@@ -180,7 +180,7 @@ public class Penjualan {
 
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
-        String css = this.getClass().getResource("styles/indexPenjualan.css").toExternalForm();
+        String css = this.getClass().getResource("styles/indexPiutang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
         GridPane header = new GridPane();
@@ -211,12 +211,13 @@ public class Penjualan {
 
         Barang barang = new Barang();
         Pelanggan pelanggan = new Pelanggan();
-        Piutang piutang = new Piutang();
+        Penjualan penjualan = new Penjualan();
+
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
             try {
-                index(indexStage);
+                penjualan.index(indexStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -245,7 +246,7 @@ public class Penjualan {
         navPiutang.getStyleClass().add("navPiutang");
         navPiutang.setOnAction(e -> {
             try {
-                piutang.index(indexStage);
+                index(indexStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -260,10 +261,10 @@ public class Penjualan {
         VBox contentHeaderBox = new VBox();
         contentHeaderBox.getStyleClass().add("contentHeader");
 
-        Label contentHeaderTitle = new Label("Dashboard Penjualan");
+        Label contentHeaderTitle = new Label("Halaman Piutang");
         contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
 
-        Label contentHeaderDescription = new Label("Pengelolaan daftar penjualan Toko Ajung");
+        Label contentHeaderDescription = new Label("Pengelolaan daftar Piutang Toko Ajung");
         contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
 
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
@@ -271,34 +272,6 @@ public class Penjualan {
         HBox quickStats = new HBox();
         quickStats.getStyleClass().add("quickStats");
         quickStats.setSpacing(10);
-
-        VBox statPenjualan = new VBox();
-        statPenjualan.setAlignment(Pos.CENTER);
-        statPenjualan.getStyleClass().add("statPenjualan");
-        HBox.setHgrow(statPenjualan, Priority.ALWAYS);
-
-        Label statPenjualanHeader = new Label("Penjualan");
-        statPenjualanHeader.getStyleClass().add("statPenjualanHeader");
-
-        Label statPenjualanContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
-        statPenjualanContent.getStyleClass().add("statPenjualanContent");
-
-        statPenjualan.getChildren().addAll(statPenjualanHeader, statPenjualanContent);
-
-        VBox statPiutang = new VBox();
-        statPiutang.setAlignment(Pos.CENTER);
-        statPiutang.getStyleClass().add("statPiutang");
-        HBox.setHgrow(statPiutang, Priority.ALWAYS);
-
-        Label statPiutangHeader = new Label("Piutang");
-        statPiutangHeader.getStyleClass().add("statPiutangHeader");
-
-        Label statPiutangContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
-        statPiutangContent.getStyleClass().add("statPiutangContent");
-
-        statPiutang.getChildren().addAll(statPiutangHeader, statPiutangContent);
-
-        quickStats.getChildren().setAll(statPenjualan, statPiutang);
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
@@ -312,28 +285,6 @@ public class Penjualan {
 
         HBox buttonBox = new HBox();
         buttonBox.setSpacing(10);
-
-        Button buttonCreate = new Button("+ Penjualan");
-        buttonCreate.getStyleClass().add("buttonCreate");
-        buttonCreate.setAlignment(Pos.CENTER);
-        buttonCreate.setTextFill(Color.WHITE);
-        buttonCreate.setMinWidth(150);
-
-        Button buttonCetakLaporan = new Button("Cetak");
-        buttonCetakLaporan.getStyleClass().add("buttonCetakLaporan");
-        buttonCetakLaporan.setAlignment(Pos.CENTER);
-        buttonCetakLaporan.setTextFill(Color.WHITE);
-        buttonCetakLaporan.setMinWidth(150);
-
-        buttonBox.getChildren().setAll(buttonCreate, buttonCetakLaporan);
-
-        buttonCreate.setOnAction(e -> {
-            try {
-                create(indexStage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
 
         TableView<ObservableList<String>> table = new TableView<>();
 
@@ -387,6 +338,7 @@ public class Penjualan {
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
             final Button editButton = new Button("Edit");
             final Button deleteButton = new Button("Hapus");
+            final Button pelunasanButton = new Button("lunas");
 
             {
                 editButton.setOnAction(event -> {
@@ -414,6 +366,12 @@ public class Penjualan {
                         getTableView().getItems().remove(rowData); // Remove from table view
                     }
                 });
+
+                pelunasanButton.setOnAction(event -> {
+                    ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                    int salesId = Integer.parseInt(rowData.get(4));
+
+                });
             }
 
             @Override
@@ -423,7 +381,7 @@ public class Penjualan {
                 if (empty) {
                     setGraphic(null);
                 } else {
-                    HBox buttons = new HBox(editButton, deleteButton);
+                    HBox buttons = new HBox(editButton, deleteButton, pelunasanButton);
                     buttons.setSpacing(5);
                     setGraphic(buttons);
                 }
@@ -446,7 +404,7 @@ public class Penjualan {
     public void create(Stage createStage) throws Exception {
         SalesService salesService = new SalesService();
         BorderPane borderPane = new BorderPane();
-        String css = this.getClass().getResource("styles/createPenjualan.css").toExternalForm();
+        String css = this.getClass().getResource("styles/createPiutang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
         GridPane header = new GridPane();
@@ -479,12 +437,13 @@ public class Penjualan {
         // Buat item navigasi
         Barang barang = new Barang();
         Pelanggan pelanggan = new Pelanggan();
-        Piutang piutang = new Piutang();
+        Penjualan penjualan = new Penjualan();
+
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
             try {
-                index(createStage);
+                penjualan.index(createStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -513,7 +472,7 @@ public class Penjualan {
         navPiutang.getStyleClass().add("navPiutang");
         navPiutang.setOnAction(e -> {
             try {
-                piutang.index(createStage);
+                index(createStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -775,7 +734,7 @@ public class Penjualan {
         }
 
         BorderPane borderPane = new BorderPane();
-        String css = this.getClass().getResource("styles/editPenjualan.css").toExternalForm();
+        String css = this.getClass().getResource("styles/editPiutang.css").toExternalForm();
         borderPane.getStylesheets().add(css);
 
         GridPane header = new GridPane();
@@ -808,12 +767,13 @@ public class Penjualan {
         // Buat item navigasi
         Barang barang = new Barang();
         Pelanggan pelanggan = new Pelanggan();
-        Piutang piutang = new Piutang();
+        Penjualan penjualan = new Penjualan();
+
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
             try {
-                index(editStage);
+                pelanggan.index(editStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -842,7 +802,7 @@ public class Penjualan {
         navPiutang.getStyleClass().add("navPiutang");
         navPiutang.setOnAction(e -> {
             try {
-                piutang.index(editStage);
+                index(editStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }

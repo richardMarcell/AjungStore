@@ -161,6 +161,8 @@ public class Pelanggan {
 
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
+        
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -190,17 +192,17 @@ public class Pelanggan {
             }
         });
 
-        Button navHutang = new Button("Hutang");
-        navHutang.getStyleClass().add("navHutang");
-        navHutang.setOnAction(e -> {
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
             try {
-                index(indexStage);
+                piutang.index(indexStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navHutang);
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
@@ -375,6 +377,7 @@ public class Pelanggan {
         // Buat item navigasi
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -403,18 +406,19 @@ public class Pelanggan {
                 ex.printStackTrace();
             }
         });
+        
 
-        Button navHutang = new Button("Hutang");
-        navHutang.getStyleClass().add("navHutang");
-        navHutang.setOnAction(e -> {
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
             try {
-                index(createStage);
+                piutang.index(createStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navHutang);
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
@@ -569,6 +573,7 @@ public class Pelanggan {
         // Buat item navigasi
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -598,17 +603,17 @@ public class Pelanggan {
             }
         });
 
-        Button navHutang = new Button("Hutang");
-        navHutang.getStyleClass().add("navHutang");
-        navHutang.setOnAction(e -> {
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
             try {
-                index(editStage);
+                piutang.index(editStage);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navHutang);
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
