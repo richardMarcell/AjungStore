@@ -5,6 +5,15 @@
   -fx-padding: 0px 16px 0px 16px;
 }
 
+.kembalianLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 14px;
+}
+
+.kembalianInput {
+  -fx-padding: 15px 4px;
+}
+
 .sidebar {
   -fx-border-style: solid;
   -fx-border-width: 0 0.5 0 0;
