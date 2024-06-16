@@ -1,6 +1,5 @@
 package ajungstore;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,23 +15,15 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
 import javafx.print.PageLayout;
 import javafx.print.PageOrientation;
 import javafx.print.Paper;
 import javafx.print.Printer;
 import javafx.print.PrinterJob;
-import javafx.scene.Scene;
-import javafx.scene.layout.VBox;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebView;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
-
-import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -55,6 +46,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.util.converter.IntegerStringConverter;
 
@@ -240,6 +233,30 @@ public class Penjualan {
         return 0; // Return 0 if no update or an error occurred
     }
 
+    public int updateStatusSales(SalesService salesService) {
+        String updateSalesSQL = "UPDATE sales SET status = ?, totalPayment = ? WHERE id = ?";
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement preparedStatement = connection.prepareStatement(updateSalesSQL)) {
+
+            preparedStatement.setString(1, salesService.getStatus());
+            preparedStatement.setDouble(2, salesService.getTotalPayment());
+            preparedStatement.setInt(3, salesService.getSaleId());
+
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows > 0) {
+                System.out.println("Rows updated: " + affectedRows);
+                return salesService.getSaleId(); // Return the updated sale ID
+            } else {
+                System.out.println("No rows updated.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error editing sales: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0; // Return 0 if no update or an error occurred
+    }
+
     public void storeSalesDetail(int salesId) {
         try (Connection connection = Dbconnect.getConnect()) {
             String sqlDelete = "DELETE FROM sales_details WHERE salesId = ?";
@@ -385,7 +402,18 @@ public class Penjualan {
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(indexStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
@@ -402,6 +430,19 @@ public class Penjualan {
 
         contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
 
+        HBox filterBox = new HBox();
+        filterBox.setSpacing(10);
+
+        DatePicker startDate = new DatePicker(LocalDate.now());
+        Label untilLabel = new Label("s/d");
+        DatePicker endDate = new DatePicker(LocalDate.now());
+        ComboBox<String> statusFilter = new ComboBox<>();
+        statusFilter.getItems().addAll("Semua", "LUNAS", "BELUM_LUNAS");
+        statusFilter.setValue("Semua");
+
+        Button filterbutton = new Button("Filter");
+        filterBox.getChildren().addAll(startDate, untilLabel, endDate, statusFilter, filterbutton);
+
         HBox quickStats = new HBox();
         quickStats.getStyleClass().add("quickStats");
         quickStats.setSpacing(10);
@@ -414,7 +455,7 @@ public class Penjualan {
         Label statPenjualanHeader = new Label("Penjualan");
         statPenjualanHeader.getStyleClass().add("statPenjualanHeader");
 
-        Label statPenjualanContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
+        Label statPenjualanContent = new Label("0"); // Anda bisa mengganti ini dengan data dari database
         statPenjualanContent.getStyleClass().add("statPenjualanContent");
 
         statPenjualan.getChildren().addAll(statPenjualanHeader, statPenjualanContent);
@@ -427,7 +468,7 @@ public class Penjualan {
         Label statPiutangHeader = new Label("Piutang");
         statPiutangHeader.getStyleClass().add("statPiutangHeader");
 
-        Label statPiutangContent = new Label("10"); // Anda bisa mengganti ini dengan data dari database
+        Label statPiutangContent = new Label("0"); // Anda bisa mengganti ini dengan data dari database
         statPiutangContent.getStyleClass().add("statPiutangContent");
 
         statPiutang.getChildren().addAll(statPiutangHeader, statPiutangContent);
@@ -436,15 +477,6 @@ public class Penjualan {
 
         VBox tableBox = new VBox();
         tableBox.setSpacing(10);
-
-        HBox filterBox = new HBox();
-        filterBox.setSpacing(10);
-
-        DatePicker startDate = new DatePicker(LocalDate.now());
-        Label untilLabel = new Label("s/d");
-        DatePicker endDate = new DatePicker(LocalDate.now());
-        Button filterbutton = new Button("Filter");
-        filterBox.getChildren().addAll(startDate, untilLabel, endDate, filterbutton);
 
         HBox buttonBox = new HBox();
         buttonBox.setSpacing(10);
@@ -500,6 +532,7 @@ public class Penjualan {
         filterbutton.setOnAction(e -> {
             LocalDate start = startDate.getValue();
             LocalDate end = endDate.getValue();
+            String status = statusFilter.getValue();
 
             data.clear(); // Clear existing data
 
@@ -510,35 +543,52 @@ public class Penjualan {
             statPenjualanContent.setText(String.valueOf(totalPenjualan));
             statPiutangContent.setText(String.valueOf(totalPiutang));
 
+            String query = "SELECT sales.id, sales.transactionDate, customers.name, sales.status, sales.totalSales " +
+                    "FROM sales " +
+                    "LEFT JOIN customers ON sales.customerId = customers.id " +
+                    "WHERE sales.transactionDate BETWEEN ? AND ?";
+            if (!status.equals("Semua")) {
+                query += " AND sales.status = ?";
+            }
+
             try (Connection connection = Dbconnect.getConnect();
-                    PreparedStatement statement = connection.prepareStatement(
-                            "SELECT sales.id, sales.transactionDate, customers.name, sales.status, sales.totalSales " +
-                                    "FROM sales " +
-                                    "LEFT JOIN customers ON sales.customerId = customers.id " +
-                                    "WHERE sales.transactionDate BETWEEN ? AND ?")) {
+                    PreparedStatement statement = connection.prepareStatement(query)) {
 
                 statement.setDate(1, java.sql.Date.valueOf(start));
                 statement.setDate(2, java.sql.Date.valueOf(end));
+                if (!status.equals("Semua")) {
+                    statement.setString(3, status);
+                }
 
                 ResultSet resultSet = statement.executeQuery();
 
                 int no = 1;
                 while (resultSet.next()) {
                     ObservableList<String> rowData = FXCollections.observableArrayList();
-                    rowData.add(String.valueOf(no++));
-                    LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
-                    String formattedDate = transactionDate.format(formatter);
-                    rowData.add(formattedDate);
-                    rowData.add(resultSet.getString("name") != null ? resultSet.getString("name") : "Cash");
+                    rowData.add(String.valueOf(no));
+                    rowData.add(resultSet.getDate("transactionDate").toLocalDate().format(formatter));
+                    rowData.add(resultSet.getString("name"));
                     rowData.add(resultSet.getString("status"));
                     rowData.add(resultSet.getString("id"));
                     rowData.add(resultSet.getString("totalSales"));
                     data.add(rowData);
+
+                    no++;
                 }
 
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
+        });
+
+        buttonCetakLaporan.setOnAction(e -> {
+            LocalDate start = startDate.getValue();
+            LocalDate end = endDate.getValue();
+
+            // Ensure data is loaded for the selected date range
+            filterbutton.fire();
+
+            printReport(indexStage, start, end, data);
         });
 
         colAction.setCellFactory(param -> new TableCell<ObservableList<String>, String>() {
@@ -577,48 +627,45 @@ public class Penjualan {
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
 
-                if (empty) {
+                if (empty || getIndex() >= getTableView().getItems().size()) {
                     setGraphic(null);
                 } else {
+                    ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                    String status = rowData.get(3);
                     HBox buttons = new HBox(editButton, deleteButton);
                     buttons.setSpacing(5);
+
+                    if ("BELUM_LUNAS".equals(status)) {
+                        Button pelunasanButton = new Button("Pelunasan");
+                        pelunasanButton.setOnAction(event -> {
+                            // Logika untuk pelunasan
+                            try {
+                                int salesId = Integer.parseInt(rowData.get(4));
+                                pelunasan(salesId, indexStage);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        });
+                        buttons.getChildren().add(pelunasanButton);
+                    }
+
                     setGraphic(buttons);
                 }
             }
         });
+
         table.setItems(data);
 
-        buttonCetakLaporan.setOnAction(e -> {
-            LocalDate start = startDate.getValue();
-            LocalDate end = endDate.getValue();
-
-            // Ensure data is loaded for the selected date range
-            filterbutton.fire();
-
-            printReport(indexStage, start, end, data);
-        });
-
-        tableBox.getChildren().setAll(filterBox, buttonBox, table);
-
-        contentBox.getChildren().setAll(contentHeaderBox, quickStats, tableBox);
+        tableBox.getChildren().addAll(buttonBox, table);
+        contentBox.getChildren().addAll(contentHeaderBox, filterBox, quickStats, tableBox);
 
         borderPane.setLeft(sidebar);
         borderPane.setCenter(contentBox);
 
-        Scene scene = new Scene(borderPane, 1200, 800);
-        indexStage.setTitle("Dashboard Penjualan");
+        Scene scene = new Scene(borderPane, 1280, 720);
         indexStage.setScene(scene);
+        indexStage.setTitle("AjungStore");
         indexStage.show();
-
-        // Update quick stats on load
-        int totalPenjualan = getTotalPenjualan(LocalDate.now(), LocalDate.now());
-        int totalPiutang = getTotalPiutang(LocalDate.now(), LocalDate.now());
-
-        statPenjualanContent.setText(String.valueOf(totalPenjualan));
-        statPiutangContent.setText(String.valueOf(totalPiutang));
-
-        // Trigger filter button click on load to display initial data
-        filterbutton.fire();
     }
 
     public void create(Stage createStage) throws Exception {
@@ -686,7 +733,18 @@ public class Penjualan {
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
@@ -732,8 +790,9 @@ public class Penjualan {
         ComboBox<String> namaPelangganInput = new ComboBox<>();
         CustomerService customerService = new CustomerService();
         List<String> customerNames = customerService.getAllCustomerNames();
-        namaPelangganInput.getItems().addAll(customerNames);
         namaPelangganInput.getItems().add("Cash");
+        namaPelangganInput.getItems().addAll(customerNames);
+        namaPelangganInput.setValue("Cash");
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
         HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
         namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
@@ -1038,6 +1097,17 @@ public class Penjualan {
             }
         });
 
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(editStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
         sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
 
         VBox contentBox = new VBox();
@@ -1084,8 +1154,8 @@ public class Penjualan {
         ComboBox<String> namaPelangganInput = new ComboBox<>();
         CustomerService customerService = new CustomerService();
         List<String> customerNames = customerService.getAllCustomerNames();
-        namaPelangganInput.getItems().addAll(customerNames);
         namaPelangganInput.getItems().add("Cash");
+        namaPelangganInput.getItems().addAll(customerNames);
         namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()) == "" ? "Cash"
                 : customerService.getCustomerNameById(salesService.getCustomerId()));
         namaPelangganInput.getStyleClass().add("namaPelangganInput");
@@ -1332,6 +1402,384 @@ public class Penjualan {
         editStage.setFullScreen(true);
         editStage.setTitle("AjungStore - Edit Penjualan");
         editStage.show();
+    }
+
+    public void pelunasan(int salesId, Stage pelunasanStage) throws Exception {
+        SalesService salesService = new SalesService();
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(
+                        "SELECT id, numberFactur, transactionDate, customerId, status, totalSales, totalPayment from sales WHERE id = ?")) {
+
+            statement.setInt(1, salesId);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                LocalDate transactionDate = resultSet.getDate("transactionDate").toLocalDate();
+                String customerId = resultSet.getString("customerId");
+                String numberFactur = resultSet.getString("numberFactur");
+                double totalSales = resultSet.getDouble("totalSales");
+                double totalPayment = resultSet.getDouble("totalPayment");
+
+                salesService.setTransactionDate(transactionDate);
+                salesService.setCustomerId(customerId != null ? Integer.valueOf(customerId) : 0);
+                salesService.setNumberFactur(numberFactur);
+                salesService.setTotalSales(totalSales);
+                salesService.setTotalPayment(totalPayment);
+
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        BorderPane borderPane = new BorderPane();
+        String css = this.getClass().getResource("styles/editPenjualan.css").toExternalForm();
+        borderPane.getStylesheets().add(css);
+
+        GridPane header = new GridPane();
+        header.setMinHeight(80);
+        header.getStyleClass().add("header");
+
+        Label appName = new Label("AjungStore");
+        appName.setTextFill(Color.RED);
+        appName.getStyleClass().add("appName");
+
+        Label welcome = new Label("Hai, Admin");
+        welcome.getStyleClass().add("welcome");
+
+        // Set the first column to expand to take the remaining space
+        ColumnConstraints column1 = new ColumnConstraints();
+        column1.setHgrow(Priority.ALWAYS);
+        header.getColumnConstraints().add(column1);
+
+        header.setAlignment(Pos.CENTER);
+
+        header.add(appName, 0, 0); // Add AjungStore to the first column, first row
+        header.add(welcome, 1, 0); // Add Hai, Admin to the second column, first row
+
+        borderPane.setTop(header);
+
+        VBox sidebar = new VBox();
+        sidebar.setMinWidth(200);
+        sidebar.getStyleClass().add("sidebar");
+
+        // Buat item navigasi
+        Barang barang = new Barang();
+        Pelanggan pelanggan = new Pelanggan();
+        Button navPenjualan = new Button("Penjualan");
+        navPenjualan.getStyleClass().add("navPenjualan");
+        navPenjualan.setOnAction(e -> {
+            try {
+                index(pelunasanStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Button navBarang = new Button("Barang");
+        navBarang.getStyleClass().add("navBarang");
+        navBarang.setOnAction(e -> {
+            try {
+                barang.index(pelunasanStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        Button navPelanggan = new Button("Pelanggan");
+        navPelanggan.getStyleClass().add("navPelanggan");
+        navPelanggan.setOnAction(e -> {
+            try {
+                pelanggan.index(pelunasanStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(pelunasanStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
+
+        VBox contentBox = new VBox();
+        contentBox.getStyleClass().add("contentBox");
+        contentBox.setSpacing(30);
+
+        VBox contentHeaderBox = new VBox();
+        contentHeaderBox.getStyleClass().add("contentHeader");
+
+        Label contentHeaderTitle = new Label("Pelunasan Piutang");
+        contentHeaderTitle.getStyleClass().add("contentHeaderTitle");
+
+        Label contentHeaderDescription = new Label("Menu pelunasan piutang di Toko Ajung");
+        contentHeaderDescription.getStyleClass().add("contentHeaderDescription");
+
+        contentHeaderBox.getChildren().addAll(contentHeaderTitle, contentHeaderDescription);
+
+        VBox formBox = new VBox();
+        formBox.getStyleClass().add("formBox");
+        formBox.setSpacing(20);
+
+        VBox primaryForm = new VBox();
+        primaryForm.setSpacing(30);
+        primaryForm.getStyleClass().add("primaryForm");
+
+        HBox nomorFakturField = new HBox();
+        nomorFakturField.setSpacing(60);
+        nomorFakturField.setAlignment(Pos.CENTER_LEFT);
+        Label nomorFakturLabel = new Label("No Faktur");
+        nomorFakturLabel.getStyleClass().add("nomorFakturLabel");
+        TextField nomorFakturInput = new TextField();
+        nomorFakturInput.setEditable(false);
+        nomorFakturInput.setText(salesService.getNumberFactur());
+        nomorFakturInput.getStyleClass().add("nomorFakturInput");
+        HBox.setHgrow(nomorFakturInput, Priority.ALWAYS);
+        nomorFakturField.getChildren().addAll(nomorFakturLabel, nomorFakturInput);
+
+        HBox namaPelangganField = new HBox();
+        namaPelangganField.setSpacing(15);
+        namaPelangganField.setAlignment(Pos.CENTER_LEFT);
+        Label namaPelangganLabel = new Label("Nama Pelanggan");
+        namaPelangganLabel.getStyleClass().add("namaPelangganLabel");
+        namaPelangganLabel.setMinWidth(Region.USE_PREF_SIZE); // Menentukan lebar minimum agar tidak terpotong
+        ComboBox<String> namaPelangganInput = new ComboBox<>();
+        CustomerService customerService = new CustomerService();
+        List<String> customerNames = customerService.getAllCustomerNames();
+        namaPelangganInput.getItems().add("Cash");
+        namaPelangganInput.getItems().addAll(customerNames);
+        namaPelangganInput.setDisable(true);
+        namaPelangganInput.setValue(customerService.getCustomerNameById(salesService.getCustomerId()) == "" ? "Cash"
+                : customerService.getCustomerNameById(salesService.getCustomerId()));
+        namaPelangganInput.getStyleClass().add("namaPelangganInput");
+        HBox.setHgrow(namaPelangganInput, Priority.ALWAYS);
+        namaPelangganInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing
+                                                                                                // dari nomorFakturField
+        namaPelangganField.getChildren().addAll(namaPelangganLabel, namaPelangganInput);
+
+        HBox tanggalField = new HBox();
+        tanggalField.setSpacing(75);
+        tanggalField.setAlignment(Pos.CENTER_LEFT);
+        Label tanggalLabel = new Label("Tanggal");
+        tanggalLabel.getStyleClass().add("tanggalLabel");
+        tanggalLabel.setMinWidth(Region.USE_PREF_SIZE);
+        DatePicker tanggalInput = new DatePicker();
+        tanggalInput.setDisable(true);
+        tanggalInput.setEditable(false);
+        tanggalInput.setValue(salesService.getTransactionDate());
+        tanggalInput.getStyleClass().add("tanggalInput");
+        HBox.setHgrow(tanggalInput, Priority.ALWAYS);
+        tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari
+                                                                                          // tanggalField
+        tanggalField.getChildren().addAll(tanggalLabel, tanggalInput);
+
+        primaryForm.getChildren().addAll(nomorFakturField, namaPelangganField, tanggalField);
+
+        VBox secondaryForm = new VBox();
+        secondaryForm.setSpacing(20);
+        secondaryForm.getStyleClass().add("secondaryForm");
+
+        VBox secondaryFormHeader = new VBox();
+        secondaryFormHeader.setAlignment(Pos.CENTER);
+        Label secondaryFormTitle = new Label("Detail Transaksi");
+        secondaryFormTitle.getStyleClass().add("secondaryFormTitle");
+        secondaryFormHeader.getChildren().setAll(secondaryFormTitle);
+
+        GridPane secondaryFormGrid = new GridPane();
+        secondaryFormGrid.setHgap(10);
+        secondaryFormGrid.setVgap(10);
+
+        HBox totalField = new HBox();
+        totalField.setSpacing(100);
+        totalField.setAlignment(Pos.CENTER_LEFT);
+        Label totalLabel = new Label("Total");
+        totalLabel.getStyleClass().add("totalLabel");
+        TextField totalInput = new TextField();
+        totalPenjualan = salesService.getTotalSales();
+        totalInput.setEditable(false);
+        totalInput.getStyleClass().add("totalInput");
+        totalInput.setText(currencyFormat.format(totalPenjualan));
+        totalField.getChildren().addAll(totalLabel, totalInput);
+
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement detailStatement = connection.prepareStatement(
+                        "SELECT productId, price, quantity from sales_details where salesId = ?")) {
+
+            detailStatement.setInt(1, salesId);
+            ResultSet detailResultSet = detailStatement.executeQuery();
+
+            int rowIndex = 0;
+            while (detailResultSet.next()) {
+                int productId = detailResultSet.getInt("productId");
+                double price = detailResultSet.getDouble("price");
+                int quantity = detailResultSet.getInt("quantity");
+                addSecondaryFormFieldOnPelunasanPage(secondaryFormGrid, rowIndex,
+                        total -> totalInput.setText(currencyFormat.format(total)), productId, price, quantity);
+                rowIndex++;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        HBox totalTagihanField = new HBox();
+        totalTagihanField.setSpacing(60);
+        totalTagihanField.setAlignment(Pos.CENTER_LEFT);
+        Label totalTagihanLabel = new Label("Total Tagihan");
+        totalTagihanLabel.getStyleClass().add("totalBayarLabel");
+        TextField totalTagihanInput = new TextField();
+        totalTagihanInput.setText(currencyFormat.format(salesService.getTotalSales() - salesService.getTotalPayment()));
+        totalTagihanInput.getStyleClass().add("totalBayarInput");
+
+        totalTagihanField.getChildren().addAll(totalTagihanLabel, totalTagihanInput);
+
+        HBox totalBayarField = new HBox();
+        totalBayarField.setSpacing(60);
+        totalBayarField.setAlignment(Pos.CENTER_LEFT);
+        Label totalBayarLabel = new Label("Total Bayar");
+        totalBayarLabel.getStyleClass().add("totalBayarLabel");
+        TextField totalBayarInput = new TextField();
+        totalBayarInput.setText(currencyFormat.format(0));
+        totalBayarInput.getStyleClass().add("totalBayarInput");
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    // Hapus semua karakter non-digit sebelum parsing
+                    String cleanString = newValue.replaceAll("[^\\d]", "");
+                    // Parsing string menjadi angka
+                    long parsed = Long.parseLong(cleanString);
+                    // Format angka menjadi format mata uang
+                    NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                    formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                    String formatted = formatter.format(parsed);
+                    // Set nilai yang terformat ke dalam text field
+                    totalBayarInput.setText(formatted);
+                    // Pindahkan kursor ke akhir teks
+                    totalBayarInput.end();
+                } catch (NumberFormatException e) {
+                    totalBayarInput.setText(oldValue); // Kembalikan ke nilai lama jika parsing gagal
+                }
+            }
+        });
+        // HBox.setHgrow(totalBayarInput, Priority.ALWAYS);
+        totalBayarField.getChildren().addAll(totalBayarLabel, totalBayarInput);
+
+        HBox kembalianField = new HBox();
+        kembalianField.setSpacing(75);
+        kembalianField.setAlignment(Pos.CENTER_LEFT);
+        Label kembalianLabel = new Label("Kembalian");
+        kembalianLabel.getStyleClass().add("kembalianLabel");
+        TextField kembalianInput = new TextField();
+        kembalianInput.setEditable(false);
+        kembalianInput.getStyleClass().add("kembalianInput");
+        kembalianField.getChildren().addAll(kembalianLabel, kembalianInput);
+
+        totalBayarInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            try {
+                double totalBayar = Double.parseDouble(totalBayarInput.getText().replaceAll("[^\\d]", ""));
+                double kembalian = totalBayar - (salesService.getTotalSales() - salesService.getTotalPayment());
+                if (kembalian < 0) {
+                    kembalian = 0;
+                }
+                NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
+                formatter.setMaximumFractionDigits(0); // Tidak menampilkan desimal
+                kembalianInput.setText(formatter.format(kembalian));
+            } catch (NumberFormatException e) {
+                kembalianInput.setText("Rp0");
+            }
+        });
+
+        // Hitung kembalian berdasarkan perhitungan totalPayment - totalSales
+        double kembalianDefaultValue = salesService.getTotalPayment() - salesService.getTotalSales();
+        if (kembalianDefaultValue < 0) {
+            kembalianInput.setText("Rp0");
+        } else {
+            kembalianInput.setText(currencyFormat.format(kembalianDefaultValue));
+        }
+
+        secondaryForm.getChildren().addAll(secondaryFormHeader, secondaryFormGrid,
+                totalField, totalTagihanField, totalBayarField, kembalianField);
+
+        formBox.getChildren().addAll(primaryForm, secondaryForm);
+
+        HBox contentFooterBox = new HBox();
+        contentFooterBox.setSpacing(20);
+
+        Button backButton = new Button("Kembali");
+        backButton.getStyleClass().add("backButton");
+        backButton.setOnAction(e -> {
+            try {
+                totalPenjualan = 0.0;
+                index(pelunasanStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Button submitButton = new Button("Simpan");
+        submitButton.getStyleClass().add("submitButton");
+        submitButton.setTextFill(Color.WHITE);
+        submitButton.setOnAction(e -> {
+
+            if (totalBayarInput.getText().isEmpty()
+                    || Double.parseDouble(convertToInteger(totalBayarInput.getText())) < 0) {
+                showAlert("Total Bayar harus diisi dan lebih besar atau sama dengan 0");
+                return;
+            }
+
+            if (Double.parseDouble(convertToInteger(totalBayarInput.getText())) < (salesService.getTotalSales()
+                    - salesService.getTotalPayment())) {
+                showAlert("Transaksi pelunasan wajib dilunasi");
+                return;
+            }
+            System.out.println("Berhasil menyimpan data barang");
+            try {
+                salesService.setIdSale(salesId);
+                String status = "LUNAS";
+                salesService.setStatus(status); // Atur status default
+
+                Double totalPembayaran = Double.parseDouble(convertToInteger(totalBayarInput.getText()));
+                salesService.setTotalPayment(totalPembayaran);
+
+                int saleId = updateStatusSales(salesService);
+
+                if (saleId > 0) {
+                    storeSalesDetail(saleId);
+
+                    totalKuantitas = 0;
+                    totalPenjualan = 0.0;
+                    daftarDetailTransaksi = new ArrayList<>();
+                    index(pelunasanStage);
+                } else {
+                    System.out.println("Gagal menambah data penjualan");
+                }
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        totalPenjualan = salesService.getTotalSales();
+        totalInput.setText(currencyFormat.format(totalPenjualan));
+
+        contentFooterBox.setAlignment(Pos.CENTER_RIGHT);
+        contentFooterBox.getChildren().addAll(backButton, submitButton);
+
+        contentBox.getChildren().addAll(contentHeaderBox, formBox, contentFooterBox);
+
+        borderPane.setLeft(sidebar);
+        borderPane.setCenter(contentBox);
+        ScrollPane scrollPane = new ScrollPane(borderPane); // Tambahkan ScrollPane di sini
+        scrollPane.setFitToWidth(true);
+
+        Scene scene = new Scene(scrollPane, 800, 600);
+        pelunasanStage.setScene(scene);
+        pelunasanStage.setFullScreen(true);
+        pelunasanStage.setTitle("AjungStore - Edit Penjualan");
+        pelunasanStage.show();
     }
 
     private void addSecondaryFormField(GridPane grid, int rowIndex, Consumer<Double> totalUpdater) {
@@ -1629,6 +2077,134 @@ public class Penjualan {
         }
 
         grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField, hapusDetailButtonField);
+    }
+
+    private void addSecondaryFormFieldOnPelunasanPage(GridPane grid, int rowIndex, Consumer<Double> totalUpdater,
+            int productId, double price, int quantity) {
+
+        ProductService productService = new ProductService();
+        VBox namaBarangField = new VBox();
+        namaBarangField.setSpacing(10);
+        Label namaBarangLabel = new Label("Nama Barang");
+        namaBarangLabel.getStyleClass().add("namaBarangLabel");
+        ComboBox<String> namaBarangInput = new ComboBox<>();
+        namaBarangInput.setEditable(false);
+        namaBarangInput.setDisable(true);
+        namaBarangInput.setMinWidth(600);
+        namaBarangInput.setMinHeight(20);
+        List<String> productNames = productService.getAllProductName();
+        namaBarangInput.getItems().addAll(productNames);
+        namaBarangInput.getStyleClass().add("namaBarangInput");
+        namaBarangField.getChildren().addAll(namaBarangLabel, namaBarangInput);
+
+        VBox hargaSatuanField = new VBox();
+        hargaSatuanField.setSpacing(10);
+        Label hargaSatuanLabel = new Label("Harga Satuan");
+        hargaSatuanLabel.getStyleClass().add("hargaSatuanLabel");
+        TextField hargaSatuanInput = new TextField();
+        hargaSatuanInput.setMinWidth(200);
+        hargaSatuanInput.setEditable(false);
+        hargaSatuanInput.setMinHeight(20);
+        hargaSatuanInput.getStyleClass().add("hargaSatuanInput");
+        hargaSatuanField.getChildren().addAll(hargaSatuanLabel, hargaSatuanInput);
+        hargaSatuanInput.setEditable(false); // Menonaktifkan input
+
+        // Tambahkan listener ke ComboBox untuk mengupdate harga satuan
+        namaBarangInput.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                hargaSatuanInput.setText(currencyFormat.format(productService.getProductPrice(newValue)));
+            }
+        });
+
+        VBox kuantitasField = new VBox();
+        kuantitasField.setSpacing(10);
+        Label kuantitasLabel = new Label("Kuantitas");
+        kuantitasLabel.getStyleClass().add("kuantitasLabel");
+        TextField kuantitasInput = new TextField();
+        kuantitasInput.setEditable(false);
+        kuantitasInput.setMinWidth(100);
+        kuantitasInput.setMinHeight(20);
+        kuantitasInput.getStyleClass().add("kuantitasInput");
+
+        // UnaryOperator untuk memfilter input agar hanya angka yang diterima
+        UnaryOperator<TextFormatter.Change> filter = change -> {
+            String newText = change.getControlNewText();
+            if (newText.matches("\\d*")) {
+                return change;
+            }
+            return null;
+        };
+
+        // Membuat TextFormatter dengan IntegerStringConverter untuk mengonversi ke
+        // Integer
+        TextFormatter<Integer> textFormatter = new TextFormatter<>(new IntegerStringConverter(), 0, filter);
+        kuantitasInput.setTextFormatter(textFormatter);
+
+        kuantitasField.getChildren().addAll(kuantitasLabel, kuantitasInput);
+
+        VBox subtotalField = new VBox();
+        subtotalField.setSpacing(10);
+        Label subtotalLabel = new Label("Subtotal");
+        subtotalLabel.getStyleClass().add("subtotalLabel");
+        TextField subtotalInput = new TextField();
+        subtotalInput.setMinWidth(150);
+        subtotalInput.setMinHeight(20);
+        subtotalInput.setEditable(false);
+        subtotalInput.getStyleClass().add("subtotalInput");
+        subtotalField.getChildren().addAll(subtotalLabel, subtotalInput);
+
+        // Tambahkan listener ke TextField kuantitasInput
+        kuantitasInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                try {
+                    int kuantitas = Integer.parseInt(newValue);
+                    double hargaSatuan = currencyFormat.parse(hargaSatuanInput.getText()).doubleValue();
+                    double subtotal = kuantitas * hargaSatuan;
+
+                    // Cari detail transaksi yang sudah ada untuk produk yang sama
+                    Optional<SalesDetailService> existingDetail = daftarDetailTransaksi.stream()
+                            .filter(detail -> detail.getProductId() == productService
+                                    .getProductIdByName(namaBarangInput.getValue()))
+                            .findFirst();
+
+                    if (existingDetail.isPresent()) {
+                        // Update kuantitas dan subtotal dari detail transaksi yang sudah ada
+                        SalesDetailService detail = existingDetail.get();
+                        double oldSubtotal = detail.getQuantity() * hargaSatuan;
+                        detail.setQuantity(kuantitas);
+                        detail.setPrice(hargaSatuan);
+                        double diff = subtotal - oldSubtotal;
+                        totalPenjualan += diff;
+                        totalKuantitas += kuantitas;
+                    } else {
+                        // Tambahkan detail transaksi baru ke daftarDetailTransaksi
+                        SalesDetailService detail = new SalesDetailService();
+                        detail.setProductId(productService.getProductIdByName(namaBarangInput.getValue()));
+                        detail.setPrice(hargaSatuan);
+                        detail.setQuantity(kuantitas);
+                        daftarDetailTransaksi.add(detail);
+                        totalPenjualan += subtotal;
+                        totalKuantitas += kuantitas;
+                    }
+
+                    subtotalInput.setText(currencyFormat.format(subtotal));
+                    totalUpdater.accept(totalPenjualan);
+                } catch (ParseException e) {
+                    subtotalInput.setText("0,00");
+                }
+            } else {
+                subtotalInput.setText("");
+            }
+        });
+
+        if (productId != 0 && price != 0.0 && quantity != 0) {
+            namaBarangInput.setValue(productService.getProductNameById(productId));
+            hargaSatuanInput.setText(currencyFormat.format(price));
+            kuantitasInput.setText(String.valueOf(quantity));
+            subtotalInput.setText(currencyFormat.format(quantity * price));
+        }
+
+        grid.addRow(rowIndex, namaBarangField, hargaSatuanField, kuantitasField, subtotalField);
     }
 
 }
