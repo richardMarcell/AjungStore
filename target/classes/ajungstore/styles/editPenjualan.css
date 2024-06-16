@@ -146,6 +146,12 @@
   -fx-font-size: 14px;
 }
 
+.navPiutang {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+  -fx-background-color: none;
+}
+
 .totalBayarInput {
   -fx-padding: 15px 4px;
 }

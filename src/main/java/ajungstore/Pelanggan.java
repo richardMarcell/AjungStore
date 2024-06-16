@@ -158,7 +158,18 @@ public class Pelanggan {
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(indexStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
@@ -357,7 +368,18 @@ public class Pelanggan {
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(createStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");
@@ -539,7 +561,18 @@ public class Pelanggan {
             }
         });
 
-        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan);
+        Piutang piutang = new Piutang();
+        Button navPiutang = new Button("Piutang");
+        navPiutang.getStyleClass().add("navPiutang");
+        navPiutang.setOnAction(e -> {
+            try {
+                piutang.index(editStage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        sidebar.getChildren().addAll(navPenjualan, navBarang, navPelanggan, navPiutang);
 
         VBox contentBox = new VBox();
         contentBox.getStyleClass().add("contentBox");

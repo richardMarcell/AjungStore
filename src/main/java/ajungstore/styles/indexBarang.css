@@ -5,6 +5,12 @@
   -fx-padding: 0px 16px 0px 16px;
 }
 
+.navPiutang {
+  -fx-font-size: 16px;
+  -fx-padding: 10px 0px 0px 0px;
+  -fx-background-color: none;
+}
+
 .sidebar {
   -fx-border-style: solid;
   -fx-border-width: 0 0.5 0 0;
