@@ -96,6 +96,38 @@ public class Pelanggan {
         return result.isPresent() && result.get() == buttonTypeYes;
     }
 
+    private CustomerService loadCustomerData(int customerId) {
+        CustomerService customerService = new CustomerService();
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement("SELECT * FROM customers WHERE id = ?")) {
+            statement.setInt(1, customerId);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                customerService.setName(resultSet.getString("name"));
+                customerService.setPhoneNumber(resultSet.getString("phoneNumber"));
+                customerService.setAddress(resultSet.getString("address"));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return customerService;
+    }
+
+    // Metode untuk memperbarui data pelanggan
+    private void updateCustomer(CustomerService customerService, int customerId) {
+        try (Connection connection = Dbconnect.getConnect();
+                PreparedStatement statement = connection.prepareStatement(
+                        "UPDATE customers SET name = ?, phoneNumber = ?, address = ? WHERE id = ?")) {
+            statement.setString(1, customerService.getName());
+            statement.setString(2, customerService.getPhoneNumber());
+            statement.setString(3, customerService.getAddress());
+            statement.setInt(4, customerId);
+            statement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public void index(Stage indexStage) throws Exception {
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/indexPelanggan.css").toExternalForm();
@@ -129,6 +161,8 @@ public class Pelanggan {
 
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
+
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -158,7 +192,6 @@ public class Pelanggan {
             }
         });
 
-        Piutang piutang = new Piutang();
         Button navPiutang = new Button("Piutang");
         navPiutang.getStyleClass().add("navPiutang");
         navPiutang.setOnAction(e -> {
@@ -249,8 +282,11 @@ public class Pelanggan {
             {
                 // Handle edit button action
                 editButton.setOnAction(event -> {
+                    ObservableList<String> rowData = getTableView().getItems().get(getIndex());
+                    int customerId = Integer.parseInt(rowData.get(3)); // Assuming the ID is in the fourth column
+
                     try {
-                        edit(indexStage);
+                        edit(indexStage, customerId);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -272,6 +308,7 @@ public class Pelanggan {
                         deleteCustomerRecord(id);
                         getTableView().getItems().remove(rowData); // Remove from table view
                     }
+
                 });
             }
 
@@ -287,6 +324,7 @@ public class Pelanggan {
                     setGraphic(buttons);
                 }
             }
+
         });
         table.setItems(data);
 
@@ -339,6 +377,7 @@ public class Pelanggan {
         // Buat item navigasi
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -368,7 +407,6 @@ public class Pelanggan {
             }
         });
 
-        Piutang piutang = new Piutang();
         Button navPiutang = new Button("Piutang");
         navPiutang.getStyleClass().add("navPiutang");
         navPiutang.setOnAction(e -> {
@@ -497,7 +535,9 @@ public class Pelanggan {
         createStage.show();
     }
 
-    public void edit(Stage editStage) throws Exception {
+    public void edit(Stage editStage, int customerId) throws Exception {
+        CustomerService customer = loadCustomerData(customerId);
+
         BorderPane borderPane = new BorderPane();
         String css = this.getClass().getResource("styles/editPelanggan.css").toExternalForm();
         borderPane.getStylesheets().add(css);
@@ -532,6 +572,7 @@ public class Pelanggan {
         // Buat item navigasi
         Barang barang = new Barang();
         Penjualan penjualan = new Penjualan();
+        Piutang piutang = new Piutang();
         Button navPenjualan = new Button("Penjualan");
         navPenjualan.getStyleClass().add("navPenjualan");
         navPenjualan.setOnAction(e -> {
@@ -561,7 +602,6 @@ public class Pelanggan {
             }
         });
 
-        Piutang piutang = new Piutang();
         Button navPiutang = new Button("Piutang");
         navPiutang.getStyleClass().add("navPiutang");
         navPiutang.setOnAction(e -> {
@@ -604,6 +644,7 @@ public class Pelanggan {
         namaLabel.getStyleClass().add("namaLabel");
         TextField namaInput = new TextField();
         namaInput.getStyleClass().add("namaInput");
+        namaInput.setText(customer.getName());
         HBox.setHgrow(namaInput, Priority.ALWAYS);
         namaField.getChildren().addAll(namaLabel, namaInput);
 
@@ -614,6 +655,7 @@ public class Pelanggan {
         nomorTeleponLabel.getStyleClass().add("nomorTeleponLabel");
         TextField nomorTeleponInput = new TextField();
         nomorTeleponInput.getStyleClass().add("nomorTeleponInput");
+        nomorTeleponInput.setText(customer.getPhoneNumber());
         HBox.setHgrow(nomorTeleponInput, Priority.ALWAYS);
         nomorTeleponField.getChildren().addAll(nomorTeleponLabel, nomorTeleponInput);
 
@@ -624,6 +666,7 @@ public class Pelanggan {
         alamatLabel.getStyleClass().add("alamatLabel");
         TextField alamatInput = new TextField();
         alamatInput.getStyleClass().add("alamatInput");
+        alamatInput.setText(customer.getAddress());
         HBox.setHgrow(alamatInput, Priority.ALWAYS);
         alamatField.getChildren().addAll(alamatLabel, alamatInput);
 
@@ -648,11 +691,23 @@ public class Pelanggan {
         submitButton.getStyleClass().add("submitButton");
         submitButton.setTextFill(Color.WHITE);
         submitButton.setOnAction(e -> {
-            System.out.println("Berhasil menyimpan data pelanggan");
-            try {
-                index(editStage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            if (namaInput.getText().isEmpty() || nomorTeleponInput.getText().isEmpty()
+                    || alamatInput.getText().isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Peringatan");
+                alert.setHeaderText(null);
+                alert.setContentText("Nama, Nomor Telepon, dan Alamat harus diisi.");
+                alert.showAndWait();
+            } else {
+                customer.setName(namaInput.getText());
+                customer.setAddress(alamatInput.getText());
+                customer.setPhoneNumber(nomorTeleponInput.getText());
+                updateCustomer(customer, customerId);
+                try {
+                    index(editStage);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -670,4 +725,5 @@ public class Pelanggan {
         editStage.setTitle("AjungStore - Edit Pelanggan");
         editStage.show();
     }
+
 }
