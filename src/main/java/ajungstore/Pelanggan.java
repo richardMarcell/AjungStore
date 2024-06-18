@@ -702,7 +702,7 @@ public class Pelanggan {
                 customer.setName(namaInput.getText());
                 customer.setAddress(alamatInput.getText());
                 customer.setPhoneNumber(nomorTeleponInput.getText());
-                updateCustomer(customer, customerId);
+                    updateCustomer(customer, customerId);
                 try {
                     index(editStage);
                 } catch (Exception ex) {
