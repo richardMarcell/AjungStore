@@ -84,7 +84,8 @@ public class Piutang {
     private int totalKuantitas = 0;
     NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
 
-    private String generateReportHTML(LocalDate startDate, LocalDate endDate, ObservableList<ObservableList<String>> data) {
+    private String generateReportHTML(LocalDate startDate, LocalDate endDate,
+            ObservableList<ObservableList<String>> data) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy");
         String start = startDate.format(formatter);
         String end = endDate.format(formatter);
@@ -138,6 +139,7 @@ public class Piutang {
 
         return html.toString();
     }
+
     private void printReport(Stage stage, LocalDate startDate, LocalDate endDate,
             ObservableList<ObservableList<String>> data) {
         WebView webView = new WebView();
@@ -318,7 +320,7 @@ public class Piutang {
                                     "FROM sales " +
                                     "LEFT JOIN customers ON sales.customerId = customers.id " +
                                     "WHERE sales.transactionDate BETWEEN ? AND ? " +
-                                    "AND sales.status != 'Lunas'")) { // Only fetch records that are not fully paid
+                                    "AND sales.isHadDebtBefore = TRUE")) { // Only fetch records that are not fully paid
 
                 statement.setDate(1, java.sql.Date.valueOf(start));
                 statement.setDate(2, java.sql.Date.valueOf(end));

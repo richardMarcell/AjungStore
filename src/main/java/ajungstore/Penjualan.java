@@ -82,6 +82,7 @@ public class Penjualan {
         html.append("<table>")
                 .append("<tr>")
                 .append("<th>No</th>")
+                .append("<th>Nomor Faktur</th>")
                 .append("<th>Tanggal</th>")
                 .append("<th>Nama Pelanggan</th>")
                 .append("<th>Status</th>")
@@ -91,16 +92,16 @@ public class Penjualan {
         // Table data rows
         // Table data rows
         double totalPenjualan = 0;
-        int columnTotalSalesIndex = 4; // Sesuaikan dengan indeks kolom yang benar
+        int columnTotalSalesIndex = 5; // Sesuaikan dengan indeks kolom yang benar
         for (ObservableList<String> row : data) {
             html.append("<tr>");
             for (int i = 0; i < row.size(); i++) {
                 if (i != columnTotalSalesIndex) { // Skip the column with sales ID
-                    html.append("<td>").append(i == 5 ? currencyFormat.format(Double.valueOf(row.get(i))) : row.get(i))
+                    html.append("<td>").append(i == 6 ? currencyFormat.format(Double.valueOf(row.get(i))) : row.get(i))
                             .append("</td>");
 
-                    if (i == 5) {
-                        totalPenjualan += Double.valueOf(row.get(5));
+                    if (i == 6) {
+                        totalPenjualan += Double.valueOf(row.get(6));
                     }
                 }
 
@@ -165,7 +166,7 @@ public class Penjualan {
     }
 
     public int storeSales(SalesService salesService) {
-        String insertSalesSQL = "INSERT INTO sales (customerId, userId, transactionDate, status, numberFactur, totalQuantity, totalSales, totalPayment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertSalesSQL = "INSERT INTO sales (customerId, userId, transactionDate, status, numberFactur, totalQuantity, totalSales, totalPayment, isHadDebtBefore) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement preparedStatement = connection.prepareStatement(insertSalesSQL,
                         Statement.RETURN_GENERATED_KEYS)) {
@@ -182,6 +183,7 @@ public class Penjualan {
             preparedStatement.setInt(6, salesService.getTotalQuantity());
             preparedStatement.setDouble(7, salesService.getTotalSales());
             preparedStatement.setDouble(8, salesService.getTotalPayment());
+            preparedStatement.setBoolean(9, salesService.getIsHadDebtBefore());
 
             int affectedRows = preparedStatement.executeUpdate();
 
@@ -200,7 +202,7 @@ public class Penjualan {
     }
 
     public int editSales(SalesService salesService) {
-        String updateSalesSQL = "UPDATE sales SET customerId = ?, userId = ?, transactionDate = ?, status = ?, numberFactur = ?, totalQuantity = ?, totalSales = ?, totalPayment = ? WHERE id = ?";
+        String updateSalesSQL = "UPDATE sales SET customerId = ?, userId = ?, transactionDate = ?, status = ?, numberFactur = ?, totalQuantity = ?, totalSales = ?, totalPayment = ?, isHadDebtBefore = ? WHERE id = ?";
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement preparedStatement = connection.prepareStatement(updateSalesSQL)) {
 
@@ -216,7 +218,8 @@ public class Penjualan {
             preparedStatement.setInt(6, salesService.getTotalQuantity());
             preparedStatement.setDouble(7, salesService.getTotalSales());
             preparedStatement.setDouble(8, salesService.getTotalPayment());
-            preparedStatement.setInt(9, salesService.getSaleId());
+            preparedStatement.setBoolean(9, salesService.getIsHadDebtBefore());
+            preparedStatement.setInt(10, salesService.getSaleId());
 
             int affectedRows = preparedStatement.executeUpdate();
 
@@ -234,13 +237,12 @@ public class Penjualan {
     }
 
     public int updateStatusSales(SalesService salesService) {
-        String updateSalesSQL = "UPDATE sales SET status = ?, totalPayment = ? WHERE id = ?";
+        String updateSalesSQL = "UPDATE sales SET status = ? WHERE id = ?";
         try (Connection connection = Dbconnect.getConnect();
                 PreparedStatement preparedStatement = connection.prepareStatement(updateSalesSQL)) {
 
             preparedStatement.setString(1, salesService.getStatus());
-            preparedStatement.setDouble(2, salesService.getTotalPayment());
-            preparedStatement.setInt(3, salesService.getSaleId());
+            preparedStatement.setInt(2, salesService.getSaleId());
 
             int affectedRows = preparedStatement.executeUpdate();
 
@@ -506,24 +508,27 @@ public class Penjualan {
         TableView<ObservableList<String>> table = new TableView<>();
 
         TableColumn<ObservableList<String>, String> colNo = new TableColumn<>("No");
+        TableColumn<ObservableList<String>, String> colNumberFactur = new TableColumn<>("Nomor Faktur");
         TableColumn<ObservableList<String>, String> colTanggalTransaksi = new TableColumn<>("Tanggal");
         TableColumn<ObservableList<String>, String> colNamaCustomer = new TableColumn<>("Nama Customer");
         TableColumn<ObservableList<String>, String> colStatus = new TableColumn<>("Status");
         TableColumn<ObservableList<String>, String> colAction = new TableColumn<>("Action");
 
         colNo.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
-        colTanggalTransaksi.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
+        colNumberFactur.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
+        colTanggalTransaksi.prefWidthProperty().bind(table.widthProperty().multiply(0.1));
         colNamaCustomer.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
         colStatus.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
         colAction.prefWidthProperty().bind(table.widthProperty().multiply(0.2));
 
         colNo.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(0)));
-        colTanggalTransaksi.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
-        colNamaCustomer.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
-        colStatus.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(3)));
+        colNumberFactur.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(1)));
+        colTanggalTransaksi.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(2)));
+        colNamaCustomer.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(3)));
+        colStatus.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(4)));
         colAction.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(""));
 
-        table.getColumns().addAll(colNo, colTanggalTransaksi, colNamaCustomer, colStatus, colAction);
+        table.getColumns().addAll(colNo, colNumberFactur, colTanggalTransaksi, colNamaCustomer, colStatus, colAction);
 
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
 
@@ -543,7 +548,8 @@ public class Penjualan {
             statPenjualanContent.setText(String.valueOf(totalPenjualan));
             statPiutangContent.setText(String.valueOf(totalPiutang));
 
-            String query = "SELECT sales.id, sales.transactionDate, customers.name, sales.status, sales.totalSales " +
+            String query = "SELECT sales.id, sales.numberFactur, sales.transactionDate, customers.name, sales.status, sales.totalSales "
+                    +
                     "FROM sales " +
                     "LEFT JOIN customers ON sales.customerId = customers.id " +
                     "WHERE sales.transactionDate BETWEEN ? AND ?";
@@ -566,8 +572,9 @@ public class Penjualan {
                 while (resultSet.next()) {
                     ObservableList<String> rowData = FXCollections.observableArrayList();
                     rowData.add(String.valueOf(no));
+                    rowData.add(resultSet.getString("numberFactur"));
                     rowData.add(resultSet.getDate("transactionDate").toLocalDate().format(formatter));
-                    rowData.add(resultSet.getString("name"));
+                    rowData.add(resultSet.getString("name") == null ? "Cash" : resultSet.getString("name"));
                     rowData.add(resultSet.getString("status"));
                     rowData.add(resultSet.getString("id"));
                     rowData.add(resultSet.getString("totalSales"));
@@ -580,6 +587,8 @@ public class Penjualan {
                 ex.printStackTrace();
             }
         });
+
+        filterbutton.fire();
 
         buttonCetakLaporan.setOnAction(e -> {
             LocalDate start = startDate.getValue();
@@ -599,7 +608,7 @@ public class Penjualan {
                 editButton.setOnAction(event -> {
                     try {
                         ObservableList<String> rowData = getTableView().getItems().get(getIndex());
-                        int salesId = Integer.parseInt(rowData.get(4));
+                        int salesId = Integer.parseInt(rowData.get(5));
                         edit(salesId, indexStage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -608,7 +617,7 @@ public class Penjualan {
 
                 deleteButton.setOnAction(event -> {
                     ObservableList<String> rowData = getTableView().getItems().get(getIndex());
-                    int salesId = Integer.parseInt(rowData.get(4));
+                    int salesId = Integer.parseInt(rowData.get(5));
 
                     Alert alert = new Alert(AlertType.CONFIRMATION);
                     alert.setTitle("Konfirmasi Penghapusan");
@@ -631,7 +640,7 @@ public class Penjualan {
                     setGraphic(null);
                 } else {
                     ObservableList<String> rowData = getTableView().getItems().get(getIndex());
-                    String status = rowData.get(3);
+                    String status = rowData.get(4);
                     HBox buttons = new HBox(editButton, deleteButton);
                     buttons.setSpacing(5);
 
@@ -640,7 +649,7 @@ public class Penjualan {
                         pelunasanButton.setOnAction(event -> {
                             // Logika untuk pelunasan
                             try {
-                                int salesId = Integer.parseInt(rowData.get(4));
+                                int salesId = Integer.parseInt(rowData.get(5));
                                 pelunasan(salesId, indexStage);
                             } catch (Exception ex) {
                                 ex.printStackTrace();
@@ -806,6 +815,7 @@ public class Penjualan {
         tanggalLabel.getStyleClass().add("tanggalLabel");
         tanggalLabel.setMinWidth(Region.USE_PREF_SIZE);
         DatePicker tanggalInput = new DatePicker();
+        tanggalInput.setValue(LocalDate.now());
         tanggalInput.getStyleClass().add("tanggalInput");
         HBox.setHgrow(tanggalInput, Priority.ALWAYS);
         tanggalInput.prefWidthProperty().bind(primaryForm.widthProperty().subtract(120)); // 60 adalah spacing dari
@@ -961,7 +971,9 @@ public class Penjualan {
                 String status = totalPenjualan > Double.parseDouble(convertToInteger(totalBayarInput.getText()))
                         ? "BELUM_LUNAS"
                         : "LUNAS";
+
                 salesService.setStatus(status); // Atur status default
+                salesService.setIsHadDebtBefore(status == "BELUM_LUNAS");
                 salesService.setNumberFactur(nomorFakturInput.getText());
                 salesService.setTotalQuantity(totalKuantitas);
                 salesService.setTotalSales(totalPenjualan);
@@ -1360,6 +1372,7 @@ public class Penjualan {
                 salesService.setNumberFactur(nomorFakturInput.getText());
                 salesService.setTotalQuantity(totalKuantitas);
                 salesService.setTotalSales(totalPenjualan);
+                salesService.setIsHadDebtBefore(status == "BELUM_LUNAS");
 
                 Double totalPembayaran = totalPenjualan > Double
                         .parseDouble(convertToInteger(totalBayarInput.getText()))

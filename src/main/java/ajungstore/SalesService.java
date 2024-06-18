@@ -10,6 +10,7 @@ public class SalesService {
   protected int idSale;
   protected int customerId;
   protected int userId;
+  protected boolean isHadDebtBefore;
   protected LocalDate transactionDate;
   protected String salesStatus;
   protected String numberFactur;
@@ -33,6 +34,10 @@ public class SalesService {
     return customerId;
   }
 
+  public boolean getIsHadDebtBefore() {
+    return isHadDebtBefore;
+  }
+
   public void setUserId(int id) {
     userId = id;
   }
@@ -47,6 +52,10 @@ public class SalesService {
 
   public LocalDate getTransactionDate() {
     return transactionDate;
+  }
+
+  public void setIsHadDebtBefore(boolean isHadDebtBefore) {
+    this.isHadDebtBefore = isHadDebtBefore;
   }
 
   public void setStatus(String status) {
